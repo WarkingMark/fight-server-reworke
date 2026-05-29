@@ -245,6 +245,7 @@ enum fs_skill_e {
 	FS_SK_DS_DMG          = 127, // % множитель урона при смерт. ударе (50 = x1.5)
 
 	/* Crit Defense */
+	// CRIT_RESIST - дубликат
 	FS_SK_CRIT_DMG_IGNORE = 128, // % шанс полностью игнорировать крит (урон как обычный)
 	FS_SK_CRIT_DMG_REDUCE = 129, // % снижение входящего крит урона
 	FS_SK_CRIT_CHANCE_PVP = 130, // % снижение шанса крита от игроков

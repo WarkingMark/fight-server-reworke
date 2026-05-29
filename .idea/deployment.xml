@@ -30,6 +30,13 @@
           </mappings>
         </serverdata>
       </paths>
+      <paths name="[dwar] fight-server">
+        <serverdata>
+          <mappings>
+            <mapping deploy="/" local="$PROJECT_DIR$" web="/" />
+          </mappings>
+        </serverdata>
+      </paths>
       <paths name="[dwar] log service">
         <serverdata>
           <mappings>

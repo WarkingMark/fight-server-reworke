@@ -67,6 +67,7 @@ const int FS_SK_HARD_CAPS[FS_SK_MAXCODE + 1] = {
 	[FS_SK_MULTI_HIT_PERCENT_DAMAGE] = 100,
 	[FS_SK_MULTI_HIT_CHANCE] = 100,
 	[FS_SK_CRIT_CHANCE] = 100,
+	[FS_SK_VAMPIR] = 100,
 };
 
 /* Функция применения лимита */
@@ -777,7 +778,7 @@ errno_t fs_persAttack(fs_pers_t *pers, int part, bool wpnEff) {
 	if (dmg > 0 && pers_is_alive(opp) && pers_is_bot(opp)) {
 		int lethalRate = fs_clamp_skill(FS_SK_LETHAL_RATE, PERS_SKILL(pers, FS_SK_LETHAL_RATE));
 		if (lethalRate > 0) {
-			double lethalChance = lethalRate / 10000.0;
+			double lethalChance = lethalRate / 100.0;
 			if (randRoll(lethalChance, NULL)) {
 				dmg = PERS_HP(opp);           // урон = оставшееся HP (точно убьёт)
 				PERS_INTSKILL(opp, FS_SK_HP) = 0;
@@ -965,56 +966,42 @@ errno_t fs_persAttack(fs_pers_t *pers, int part, bool wpnEff) {
 		}
 	}
 
-	// if (pers->fight) {
-	// 	fs_fightSignal(pers->fight, 0);  // wake up poll
-	// }
+	if (pers->fight) {
+		fs_fightSignal(pers->fight, 0);  // wake up poll
+	}
 
 	// Двойной удар
 	int multiDamagePercent  = 	fs_clamp_skill(FS_SK_MULTI_HIT_PERCENT_DAMAGE, PERS_SKILL(pers, FS_SK_MULTI_HIT_PERCENT_DAMAGE)); // % урона двойного удара
 	int multiDamageChance  = fs_clamp_skill(FS_SK_MULTI_HIT_CHANCE, PERS_SKILL(pers, FS_SK_MULTI_HIT_CHANCE));  // % урона двойного удара
 
-	// if (multiDamagePercent > 0 && dmgA > 0) {
-	// 	// Если шанс не задан (<=0) — срабатывает всегда (как старая логика)
-	// 	bool doExtraHit = (multiDamageChance <= 0) || randRoll(multiDamageChance / 100.0, NULL);
-	//
-	// 	if (doExtraHit) {
-	// 		double extraDmg = dmgA * (multiDamagePercent / 100.0);
-	//
-	// 		// Применяем модификаторы DMGX / PVP / PVE
+	// if (multiDamagePercent > 0 && dmg > 0) {
+	// 	bool doHit = (multiDamageChance <= 0) || randRoll(multiDamageChance / 100.0, NULL);
+	// 	if (doHit) {
+	// 		double extraDmg = calc_penetration_dmg(dmgA, multiDamagePercent, multiDamageChance);
+	// 		// Применить DMGX как к основному урону
 	// 		int dmgx = fs_clamp_skill(FS_SK_DMGX, PERS_SKILL(pers, FS_SK_DMGX));
-	//
 	// 		if (dmgx > 0) extraDmg *= (1.0 + dmgx / 100.0);
-	//
-	// 		bool pvp = pers_is_player(opp);
-	//
-	// 		if (pvp) {
-	// 			int pvpX = fs_clamp_skill(FS_SK_DMGX_PVP, PERS_SKILL(pers, FS_SK_DMGX_PVP));
-	// 			if (pvpX > 0) extraDmg *= (1.0 + pvpX / 100.0);
+	// 		bool pvp2 = pers_is_player(opp);
+	// 		if (pvp2) {
+	// 			int px = fs_clamp_skill(FS_SK_DMGX_PVP, PERS_SKILL(pers, FS_SK_DMGX_PVP));
+	// 			if (px > 0) extraDmg *= (1.0 + px / 100.0);
 	// 		} else {
-	// 			int pveX = fs_clamp_skill(FS_SK_DMGX_PVE, PERS_SKILL(pers, FS_SK_DMGX_PVE));
-	// 			if (pveX > 0) extraDmg *= (1.0 + pveX / 100.0);
+	// 			int px = fs_clamp_skill(FS_SK_DMGX_PVE, PERS_SKILL(pers, FS_SK_DMGX_PVE));
+	// 			if (px > 0) extraDmg *= (1.0 + px / 100.0);
 	// 		}
-	//
 	// 		extraDmg = MAX(extraDmg, 1.0);
-	//
 	// 		fs_persDamage(opp, extraDmg, FS_PDT_PHYSICAL, false, pers);
-	//
-	// 		// Логирование (опционально, если нужно)
-	// 		fs_fightSaveLog(pers, FS_FLC_KICK, FS_FLC_PROB, part, extraDmg, NULL, false);
-	// 		fs_persRecalcEffects(opp);
 	// 	}
 	// }
 
-	if (multiDamagePercent > 0 && dmg > 0) {
+	if (multiDamagePercent > 0 && !fE && !fB && dmg > 0) {
 		bool doHit = (multiDamageChance <= 0)
-				   || randRoll(multiDamageChance / 100.0, NULL);
+				  || randRoll(multiDamageChance / 100.0, NULL);
 		if (doHit) {
-			double extraDmg = calc_penetration_dmg(dmgA, multiDamagePercent, multiDamageChance);
-			// Применить DMGX как к основному урону
+			double extraDmg = dmgA * (multiDamagePercent / 100.0);
 			int dmgx = fs_clamp_skill(FS_SK_DMGX, PERS_SKILL(pers, FS_SK_DMGX));
 			if (dmgx > 0) extraDmg *= (1.0 + dmgx / 100.0);
-			bool pvp2 = pers_is_player(opp);
-			if (pvp2) {
+			if (pers_is_player(opp)) {
 				int px = fs_clamp_skill(FS_SK_DMGX_PVP, PERS_SKILL(pers, FS_SK_DMGX_PVP));
 				if (px > 0) extraDmg *= (1.0 + px / 100.0);
 			} else {
@@ -1025,17 +1012,21 @@ errno_t fs_persAttack(fs_pers_t *pers, int part, bool wpnEff) {
 			fs_persDamage(opp, extraDmg, FS_PDT_PHYSICAL, false, pers);
 		}
 	}
-	
-	int vampir = PERS_SKILL(pers,FS_SK_VAMPIR); // vampir xD u protivnika
-	if(vampir > 100) vampir = 100; // chtobi ne ebatsa s etim potom
+
+	int vampir = fs_clamp_skill(FS_SK_VAMPIR, PERS_SKILL(pers, FS_SK_VAMPIR));; // vampir xD u protivnika
+
 	if(vampir){
 		// esli opponent pod vampir
-		float  percent = vampir/100.0; // vampir delim na sto
+		float  percent = vampir / 100.0; // vampir delim na sto
+
 		float  vampir_dmg = -dmgA*percent; //dmg
+
 		fs_persDamage(pers,vampir_dmg,FS_FLC_VAMP,false,pers);
+
 		if(vampir_dmg < 0){
 			fs_fightSaveLog(pers,FS_FLC_KICK,FS_FLC_VAMP,part,vampir_dmg,NULL,false);
 		}
+
 		fs_persRecalcEffects(pers);
 	}
 	
@@ -1325,25 +1316,36 @@ errno_t fs_persBotIntelligence(fs_pers_t *pers) {
 	// }
 	// pers->botActionTime = stime + randInt(2,3,NULL);
 
+	if (!pers) {
+		WARN("Invalid arguments");
+		return ERR_WRONG_ARGS;
+	}
+
+	// ОБЯЗАТЕЛЬНО ДО проверки ACTIVE:
+	// переход CREATED → FIGHTING (бот входит в очередь)
+	if (pers->status == FS_PS_CREATED) {
+		pers->status = FS_PS_FIGHTING;
+	}
+
 	if (pers->status != FS_PS_ACTIVE) return OK;
 
+	// Бот без Lua — атакует быстро
 	if (!pers->ctrlFunc) {
-		// Бот без Lua: атакует сразу как только его ход (mtime обновится в fs_persAttack)
-		if (pers->mtime >= stime) return OK;   // ждём ровно 1 тик (100ms после фикса poll)
+		if (pers->mtime >= stime) return OK;
 		fs_persAttack(pers, randInt(1,3,NULL), false);
 		return OK;
 	}
 
-	// Lua-бот: прежняя логика с задержкой
+	// Lua-бот — прежняя задержка
 	if (pers->opponent && pers->opponent->flags & FS_PF_STUNNED) {
 		if (pers->mtime > (stime - 2)) return OK;
 	} else {
 		if (pers->mtime > (stime - 1)) return OK;
 	}
 	if (pers->botActionTime > stime) return OK;
-
 	pers->botActionTime = stime + randInt(2,3,NULL);
-	
+
+	// Lua вызов (строки 1185–... остаются без изменений)
 	fight = pers->fight;
 	L = fight->L;
 	
@@ -1690,6 +1692,7 @@ double fs_persDamage(fs_pers_t *pers, double dmg, int dmgType, bool crit, fs_per
 		if (!pers->killer) pers->killer = activator;
 		fs_persDie(pers, activator);   // ← вызвать сразу, не ждать recalc
 	}
+
 	if (dmg && activator && (activator != pers)) {	// updating statistics
 		if (dmg > 0) {
 			activator->dmg += dmg;

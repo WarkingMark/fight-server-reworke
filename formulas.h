@@ -306,7 +306,6 @@ static inline double apply_flat_evade_bonus(double pE, int evade_chance_skill,
 // multi_hit_chance: % шанс нанести этот удар (FS_SK_MULTI_HIT_CHANCE)
 //   если multi_hit_chance=0 → всегда срабатывает (обратная совместимость)
 // Возвращает: урон доп. удара или 0 если не сработал
-
 static inline double calc_penetration_dmg(double dmgA, int percent_damage,
 											int multi_hit_chance_skill) {
 	if (multi_hit_chance_skill <= 0) return 0.0;

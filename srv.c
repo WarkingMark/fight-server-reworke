@@ -384,7 +384,9 @@ errno_t fs_workerThreadRoutine(fs_worker_t *worker) {
 		}
 		fs_workerUnlockMutex(worker);
 		if (!workerLoop) break;
-		ecnt = poll(ufds,nfds,1000);
+
+		ecnt = poll(ufds,nfds,100);
+
 		if ((ecnt == -1) && (errno != EINTR)) WARN("poll() failed: %s",strerror(errno));
 		if (ecnt > 0) {
 			worker->mtime = fs_stime;
