@@ -51,7 +51,7 @@ luaif_tolua.o: luaif_tolua.c /usr/include/stdc-predef.h \
  /usr/include/netdb.h /usr/include/rpc/netdb.h /usr/include/bits/netdb.h \
  /usr/include/arpa/inet.h /usr/include/pthread.h /usr/include/sched.h \
  /usr/include/bits/sched.h /usr/include/bits/setjmp.h \
- /usr/include/lualib.h vec.h debug.h pers.h typedefs.h
+ /usr/include/lualib.h vec.h debug.h pers.h typedefs.h formulas.h utils.h
 
 /usr/include/stdc-predef.h:
 
@@ -278,3 +278,7 @@ debug.h:
 pers.h:
 
 typedefs.h:
+
+formulas.h:
+
+utils.h:

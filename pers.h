@@ -6,6 +6,8 @@
 #define __PERS_H__
 
 #include "typedefs.h"
+#include "formulas.h"
+#include "utils.h"
 
 
 #define PERS_STUCK_TTL   300
@@ -38,59 +40,17 @@
 #define PF_CLMASK(A) ((A) & (FS_PF_BOT | FS_PF_STUNNED | FS_PF_PET | FS_PF_DEFENDED | FS_PF_MAGIC | FS_PF_SKGHOST | FS_PF_INVISIBLE | FS_PF_FLEE | FS_PF_NO_AURAS | FS_PF_NO_OPP_AUTO | FS_PF_SHADOW))
 #define PEF_CLMASK(A) ((A) & (FS_PEF_WEAPONEFFECT | FS_PEF_SPELL | FS_PEF_PASSTURN | FS_PEF_NEEDTURN | FS_PEF_TARGETSELF | FS_PEF_TARGETOPP | FS_PEF_TEAMSELF | FS_PEF_TEAMOPP | FS_PEF_CONFIRM | FS_PEF_DISABLED | FS_PEF_BOW | FS_PEF_AURA | FS_PEF_USEDEAD))
 
-// ---------- fight physics constant mess ----------
-
+// Level tables (arrays defined in pers.c)
 #define MAX_LEVEL   20
-
 #define BASE_EXP(LVL) (((LVL) >= 0) && ((LVL) <= MAX_LEVEL) ? fs_persBaseExp[(LVL)]: 0)
 #define BASE_SUM(LVL) (((LVL) >= 0) && ((LVL) <= MAX_LEVEL) ? fs_persSkillSum[(LVL)][0]: 0)
 #define ITEM_SUM(LVL) (((LVL) >= 0) && ((LVL) <= MAX_LEVEL) ? fs_persSkillSum[(LVL)][1]: 0)
 #define BASE_HONOR(LVL) (((LVL) >= 0) && ((LVL) <= MAX_LEVEL) ? fs_persBaseHonor[(LVL)]: 0)
-
 #define _COMP(LVL, RATIO) (ITEM_SUM(LVL)/(2.0*(RATIO)-2) - BASE_SUM(LVL)/5.0)
 
-#define _V0    1.5	// health ratio ("tank" and undressed)
-#define _Vs    1	// health per 1 stat
-#define _X0    1.5	// damage ratio ("crit" and undressed)
-#define _Xs    0.1	// damage per 1 stat
+// Все боевые формулы и константы перенесены в formulas.h
 
-// event limits
-#define _evPA  0.8	// dressed well
-#define _evP0  0.05	// dressed bad
-
-// item compensation
-#define _IComp 0.5
-
-// HP penalty for being dressed bad
-#define _decHP 0.8
-
-// probability (undressed)
-#define _pE0   0.02
-#define _pC0   0.02
-#define _pB0   0.02
-
-// anti-probability (undressed)
-#define _pAE0  0.00
-#define _pAC0  0.00
-#define _pAB0  0.00
-
-// probability (normal)
-#define _pE    0.48
-#define _pC    0.5
-#define _pB    0.45
-
-// anti-probability (normal)
-#define _pAE   0.42
-#define _pAC   0.50
-#define _pAB   0.60
-
-#define _Ap0   0	// damage absorb (undressed)
-#define _Ap    0.15	// damage absorb (tank)
-
-#define _Cx    2.2	// crit damage increase
-
-#define _CMBp  0.30	// combo probability decrease
-#define _dmgDx 0.5	// damage under FS_PF_DEFENDED flag
+// ---------- fight events & codes ----------
 
 
 
@@ -126,6 +86,7 @@ enum fs_persFlags_e {
 	FS_PF_LIFELESS    = 0x1000,
 	FS_PF_PET   	  = 0x4000,	//PET Durumu
 	FS_PF_INVISIBLE	  = 0x8000,  //32768
+	FS_PF_DUALWIELD   = 0x08000000, //134217728
 	FS_PF_FLEE		  = 0x10000, //65536
 	FS_PF_NO_AURAS	  = 0x10000000, //268435456
 	FS_PF_NO_OPP_AUTO = 0x20000000, //536870912
@@ -246,11 +207,54 @@ enum fs_skill_e {
 	FS_SK_AOE_EFF_DUR_P   = 104, // % duration modifier for effects applied to AOE targets
 	FS_SK_AOE_CRIT_MOD    = 105, // additional crit chance for AOE targets (10 = +10% more likely)
 	FS_SK_AOE_VAMP_MOD    = 106, // % of vampirism applied from AOE targets (50 = 50% of normal vamp)
-
 	/* Universal damage multiplier — works on ALL damage types */
 	FS_SK_ADD_MULT_DMG    = 107, // % additional damage multiplier (applies everywhere)
+
+	/* DoT & Healing Enhancements */
+	FS_SK_DOT_DMG_MULT    = 108, // % усиления DoT за каждый тик (накапливается)
+	FS_SK_DOT_DURATION    = 109, // % длительности DoT эффектов
+
+	/* Regeneration */
+	FS_SK_HP_REGEN_FLAT   = 110, // Flat HP regen per turn
+	FS_SK_MP_REGEN_FLAT   = 111, // Flat MP regen per turn
+	FS_SK_HP_REGEN_P      = 112, // % Max HP regen per turn
+	FS_SK_MP_REGEN_P      = 113, // % Max MP regen per turn
+
+	/* Healing Modifiers */
+	FS_SK_HEAL_RCVD_MULT  = 114, // % усиления входящего лечения
+	FS_SK_SELF_HEAL_MULT  = 115, // % усиления самолечения
+	FS_SK_HEAL_POWER      = 116, // % усиления исходящего лечения
+
+	/* Defensive & Utility */
+	FS_SK_REFLECTION_DMG_P= 117, // % возврата урона при получении удара (макс 100%)
+	FS_SK_MANA_SHIELD     = 118, // % урона снимаемого с MP вместо HP
+	FS_SK_CRIT_RESIST     = 119, // % шанс превратить крит в обычный удар
+
+	/* Execute */
+	FS_SK_EXECUTE_P       = 120, // % доп урона если у цели HP < 30%
+
+	/* Utility */
+	FS_SK_MP_COST_REDUCE  = 121, // % снижения затрат маны
+	FS_SK_MP_COST_FLAT    = 122, // плоское снижение затрат маны
+	FS_SK_CHANCE_IGNORE_DEF= 123,// % шанс игнорировать защиты цели
+
+	/* Advanced Mechanics */
+	FS_SK_BLOOD_EXPLOSION = 124, // % шанс взрыва при 3+ стеках кровотечения
+	FS_SK_MULTI_HIT_PERCENT_DAMAGE = 125, // % урона от двойного удара
+	FS_SK_DEADLY_STRIKE   = 126, // % шанс смертельного удара (поверх крита)
+	FS_SK_DS_DMG          = 127, // % множитель урона при смерт. ударе (50 = x1.5)
+
+	/* Crit Defense */
+	FS_SK_CRIT_DMG_IGNORE = 128, // % шанс полностью игнорировать крит (урон как обычный)
+	FS_SK_CRIT_DMG_REDUCE = 129, // % снижение входящего крит урона
+	FS_SK_CRIT_CHANCE_PVP = 130, // % снижение шанса крита от игроков
+	FS_SK_BLOCK_CHANCE = 131,   // прямой % бонус к шансу блока
+    FS_SK_EVADE_CHANCE = 132,   // прямой % бонус к шансу уклонения
+	FS_SK_MULTI_HIT_CHANCE = 133, // % шанс двойного удара
+	FS_SK_CRIT_CHANCE = 134,   // плоский % к шансу крита (независимо от INT)
 };
-#define FS_SK_MAXCODE    107
+
+#define FS_SK_MAXCODE   134
 
 enum fs_persPart_e {
 	FS_PPT_HD1   =  0,
@@ -486,7 +490,7 @@ errno_t fs___persEffectTargetCheck(fs_pers_t *pers, fs_persEff_t *eff, fs_pers_t
 void fs___persEffectTargetUpdate(fs_pers_t *pers, fs_persEff_t *eff, fs_pers_t *target);
 void fs___persActivateEffect(fs_pers_t *pers, fs_persEff_t *eff, fs_pers_t *target);
 errno_t fs___persActivateEffectCheck(fs_pers_t *pers, fs_persEff_t *eff, fs_pers_t *target);
-inline double fs___persAoeWeight(fs_pers_t *pers, fs_pers_t *target);
+
 errno_t fs_persRecalcEffects(fs_pers_t *pers);
 errno_t fs_persDropEffects(fs_pers_t *pers);
 errno_t fs_persGetCharge(fs_pers_t *pers, int dmgType, fs_persCharge_t *charge, bool moveCnt);

@@ -309,7 +309,7 @@ errno_t fs_fightThreadRoutine(fs_fight_t *fight) {
 		}
 		pthread_mutex_unlock(&(fight->mutex_cl));
 		if (!fightLoop) break;
-		ecnt = poll(ufds,nfds,1000);
+		ecnt = poll(ufds,nfds,100); // Обработка раньше 1000 mc сейчас 100
 		if ((ecnt == -1) && (errno != EINTR)) WARN("poll() failed: %s",strerror(errno));
 		if (ecnt > 0) {
 			fight->mtime = stime;
@@ -537,12 +537,12 @@ errno_t fs_fightUpdateState(fs_fight_t *fight, int *pairMade, int *persActive, i
 			}
 			continue;
 		}
-		if(pers1->status == FS_PS_ACTIVE && !(pers1->flags & FS_PF_BOT)) {
+		if(pers1->status == FS_PS_ACTIVE && pers_is_player(pers1)) {
 			fs_persPersIntelligence(pers1);
 			fs_fightAutoActiveEffect(pers1); //Авто-активация эффекетов
 		}
-		if (pers1->flags & FS_PF_BOT) v_push(&persVec1,pers1);
-		/*if (pers1->flags & FS_PF_BOT){
+		if (pers_is_bot(pers1)) v_push(&persVec1,pers1);
+		/*if (pers_is_bot(pers1)){
 			v_push(&persVec1,pers1);
 		}else{
 			v_push(&persVec3,pers1);
@@ -605,17 +605,19 @@ errno_t fs_fightUpdateState(fs_fight_t *fight, int *pairMade, int *persActive, i
 			do{
 				pers1->_inicHod = true;
 				pers2->_inicHod = true;
-				int pers1_inic = PERS_SKILL(pers1,FS_SK_INITIATIVE);
-				int pers2_inic = PERS_SKILL(pers2,FS_SK_INITIATIVE);
 
-				if(!(pers1->flags & FS_PF_BOT) && (pers2->flags & FS_PF_BOT)){
+				// INITIATIVE + DEX contribution (formula from formulas.h)
+				double pers1_inic = calc_initiative(PERS_SKILL(pers1, FS_SK_INITIATIVE), PERS_SKILL(pers1, FS_SK_DEX));
+				double pers2_inic = calc_initiative(PERS_SKILL(pers2, FS_SK_INITIATIVE), PERS_SKILL(pers2, FS_SK_DEX));
+
+				if(pers_is_player(pers1) && pers_is_bot(pers2)){
 					lvlDiff = MIN(MAX(PERS_LEVEL_SAFE(pers1) - PERS_LEVEL_SAFE(pers2), 0), 10);
 					if(pers1_inic > (pow(1.4,lvlDiff))*50) {
 						fs_persGetTurn(pers1);
 						break;
 					}
 				}
-				if(!(pers2->flags & FS_PF_BOT) && (pers1->flags & FS_PF_BOT)){
+				if(pers_is_player(pers2) && pers_is_bot(pers1)){
 					lvlDiff = MIN(MAX(PERS_LEVEL_SAFE(pers1) - PERS_LEVEL_SAFE(pers2), 0), 10);
 					if(pers2_inic > (pow(1.4,lvlDiff))*50) {
 						fs_persGetTurn(pers2);

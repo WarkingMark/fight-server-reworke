@@ -327,8 +327,10 @@ typedef struct {
 } FightResult;
 
 static FightResult simulate(Pers *tmplA, Pers *tmplB, int rounds, int verbose) {
+    int i;
+
     FightResult r = {0};
-    for (int i = 0; i < rounds; i++) {
+    for (i = 0; i < rounds; i++) {
         Pers A = *tmplA, B = *tmplB;
         FCtx _ctx; FCtx *ctx = &_ctx; ctx_init(ctx, &A, &B, verbose && i==0);
 
@@ -362,6 +364,8 @@ static int tests_run = 0, tests_fail = 0;
 #define ASSERT_NEAR(a,b,eps,msg) ASSERT(fabs((a)-(b)) < (eps), msg)
 
 static void run_unit_tests() {
+    int i;
+
     printf("\n══════════════════════════════════════════════\n");
     printf("  UNIT TESTS\n");
     printf("══════════════════════════════════════════════\n");
@@ -378,7 +382,7 @@ static void run_unit_tests() {
         _seed=0x12345678; /* seed for no-evade, no-crit, no-block */
         /* run 1000 hits, check avg reduction */
         double total=0; int n=1000;
-        for(int i=0;i<n;i++){
+        for (i =0;i<n;i++){
             B.hp=300; A.dmg_dealt=0;
             do_hit(&ctx,&A,&B);
             total+=A.dmg_dealt;
@@ -396,7 +400,7 @@ static void run_unit_tests() {
         B.sk[SK_DMG_REDUCE_P]=50; /* 50% reduction */
         FCtx ctx; ctx_init(&ctx,&A,&B,0);
         double total=0; int n=2000;
-        for(int i=0;i<n;i++){ B.hp=300; A.dmg_dealt=0; do_hit(&ctx,&A,&B); total+=A.dmg_dealt; }
+        for (i =0;i<n;i++){ B.hp=300; A.dmg_dealt=0; do_hit(&ctx,&A,&B); total+=A.dmg_dealt; }
         printf("\n[DMG_REDUCE_P=50%%]\n");
         printf("  avg dmg = %.1f\n", total/n);
         ASSERT(total/n > 0, "DMG_REDUCE_P: damage > 0");
@@ -413,10 +417,10 @@ static void run_unit_tests() {
         Pers A2=A; A2.sk[SK_DMGX_PVP]=0;
         double dmg_with=0, dmg_without=0; int n=3000;
         _seed=0xABCD1234;
-        for(int i=0;i<n;i++){ A.dmg_dealt=0; B.hp=500; do_hit(&ctx,&A,&B); dmg_with+=A.dmg_dealt; }
+        for (i =0;i<n;i++){ A.dmg_dealt=0; B.hp=500; do_hit(&ctx,&A,&B); dmg_with+=A.dmg_dealt; }
         FCtx ctx2; ctx_init(&ctx2,&A2,&B,0);
         _seed=0xABCD1234;
-        for(int i=0;i<n;i++){ A2.dmg_dealt=0; B.hp=500; do_hit(&ctx2,&A2,&B); dmg_without+=A2.dmg_dealt; }
+        for (i =0;i<n;i++){ A2.dmg_dealt=0; B.hp=500; do_hit(&ctx2,&A2,&B); dmg_without+=A2.dmg_dealt; }
         printf("\n[DMGX_PVP=30: with=%.1f, without=%.1f, ratio=%.2fx]\n", dmg_with/n, dmg_without/n, dmg_with/dmg_without);
         ASSERT(dmg_with > dmg_without, "DMGX_PVP: dmg_with > dmg_without");
         ASSERT_NEAR(dmg_with/dmg_without, 1.3, 0.15, "DMGX_PVP: ratio ~1.30");
@@ -430,7 +434,7 @@ static void run_unit_tests() {
         A.sk[SK_CRITDMX]=50; /* +0.5 to Cx → Cx=2.3 */
         FCtx ctx; ctx_init(&ctx,&A,&B,0);
         double dmg_crit_sum=0; int crit_n=0;
-        for(int i=0;i<20000;i++){
+        for (i =0;i<20000;i++){
             A.crits=0; A.dmg_dealt=0; B.hp=500;
             do_hit(&ctx,&A,&B);
             if(A.crits > 0){ dmg_crit_sum+=A.dmg_dealt; crit_n++; }
@@ -451,7 +455,7 @@ static void run_unit_tests() {
         A.sk[SK_LETHAL_RATE]=100; /* 1% instant kill */
         FCtx ctx; ctx_init(&ctx,&A,&B,0);
         int lethals=0;
-        for(int i=0;i<10000;i++){
+        for (i =0;i<10000;i++){
             A.lethal_kills=0; B.hp=1000;
             do_hit(&ctx,&A,&B);
             if(B.hp==0 && A.lethal_kills>0) lethals++;
@@ -468,7 +472,7 @@ static void run_unit_tests() {
         A.sk[SK_MULTI_HIT]=50; /* 50% chance */
         FCtx ctx; ctx_init(&ctx,&A,&B,0);
         double dmg_mh=0, dmg_nm=0; int mh_cnt=0, nm_cnt=0;
-        for(int i=0;i<10000;i++){
+        for (i =0;i<10000;i++){
             A.multihits=0; A.dmg_dealt=0; B.hp=500;
             do_hit(&ctx,&A,&B);
             if(A.multihits > 0){ dmg_mh+=A.dmg_dealt; mh_cnt++; }
@@ -487,10 +491,10 @@ static void run_unit_tests() {
         B.core[SK_DEX]=200; B.hp=B.hpmax=500; /* high DEX = high evade */
         FCtx ctx; ctx_init(&ctx,&A,&B,0);
         int ev_no_acc=0;
-        for(int i=0;i<5000;i++){ B.evades=0; B.hp=500; do_hit(&ctx,&A,&B); ev_no_acc+=B.evades; }
+        for (i =0;i<5000;i++){ B.evades=0; B.hp=500; do_hit(&ctx,&A,&B); ev_no_acc+=B.evades; }
         A.sk[SK_PHYS_ACCURACY]=200;
         int ev_with_acc=0;
-        for(int i=0;i<5000;i++){ B.evades=0; B.hp=500; do_hit(&ctx,&A,&B); ev_with_acc+=B.evades; }
+        for (i =0;i<5000;i++){ B.evades=0; B.hp=500; do_hit(&ctx,&A,&B); ev_with_acc+=B.evades; }
         printf("\n[PHYS_ACCURACY=200: evades without=%d, with=%d]\n", ev_no_acc, ev_with_acc);
         ASSERT(ev_with_acc <= ev_no_acc, "PHYS_ACCURACY: reduces evade count");
     }
@@ -502,7 +506,7 @@ static void run_unit_tests() {
         B.hp=B.hpmax=500; B.sk[SK_REFLECTION_DMG_P]=25;
         FCtx ctx; ctx_init(&ctx,&A,&B,0);
         A.dmg_taken=0; B.dmg_reflected=0;
-        for(int i=0;i<3000;i++){ A.hp=500; B.hp=500; do_hit(&ctx,&A,&B); }
+        for (i =0;i<3000;i++){ A.hp=500; B.hp=500; do_hit(&ctx,&A,&B); }
         printf("\n[REFLECTION_DMG_P=25%%: B reflected=%d total]\n", B.dmg_reflected);
         ASSERT(B.dmg_reflected > 0, "REFLECTION_DMG_P: reflects damage");
     }
@@ -565,11 +569,13 @@ static void print_battle(const char *nameA, Pers *tA, const char *nameB, Pers *t
 
 /* ───── Main ───── */
 int main(int argc, char **argv) {
+    int i; int t; int v;
+
     _seed = (unsigned int)time(NULL);
     int verbose  = 0;
     int n_rounds = DEFAULT_ROUNDS;
 
-    for (int i = 1; i < argc; i++) {
+    for (i = 1; i < argc; i++) {
         if (!strcmp(argv[i], "--verbose") || !strcmp(argv[i], "-v")) verbose = 1;
         else if (!strcmp(argv[i], "--rounds") && i+1 < argc) n_rounds = atoi(argv[++i]);
         else if (!strcmp(argv[i], "--seed")   && i+1 < argc) _seed    = (unsigned int)atoi(argv[++i]);
@@ -629,9 +635,9 @@ int main(int argc, char **argv) {
         {"PHYS_ACCURACY",  SK_PHYS_ACCURACY,  {0, 50,150,300}},
     };
     int nt = sizeof(tests)/sizeof(tests[0]);
-    for (int t = 0; t < nt; t++) {
+    for (t = 0; t < nt; t++) {
         printf("  %-20s", tests[t].name);
-        for (int v = 0; v < 4; v++) {
+        for (v = 0; v < 4; v++) {
             Pers W, T; build_warrior(&W); build_tank(&T);
             int val = tests[t].vals[v];
             /* apply to whichever is more meaningful */

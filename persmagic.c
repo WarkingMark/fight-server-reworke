@@ -41,9 +41,8 @@ double    fs_persPartResistData[4][4] = {
 	{ -0.12,  -0.7, -2.2, 3.03 }
 };
 
-
 inline fs_skill_t fs_resistSkill(int dmgType) {
-	return 
+	return
 		(dmgType & FS_PDT_PHYSICAL    ? FS_SK_RSTPHYSIC:
 		(dmgType & FS_PDT_KIDMAGIC    ? FS_SK_RSTKIDMAG:
 		(dmgType & FS_PDT_AIRFIRE     ? FS_SK_RSTAIRFIRE:
@@ -126,13 +125,13 @@ double fs_persRecalcDmg(fs_pers_t *pers, fs_pers_t *opp, int dmgType, double dmg
 	dmg += PERS_SKILL(pers,FS_SK_WISDOM) * _Xs / n;
 
 	// ELEMENT_ATK: elemental attack bonus based on damage type
-	int elementAtk = PERS_SKILL(pers, FS_SK_ELEMENT_ATK);
+	int elementAtk = fs_clamp_skill(FS_SK_ELEMENT_ATK, PERS_SKILL(pers, FS_SK_ELEMENT_ATK));
 	if (elementAtk > 0 && dmgType != FS_PDT_PHYSICAL) {
 		dmg += dmg * (elementAtk / 100.0);
 	}
 
 	// ELEMENT_DEF: elemental defense bonus based on incoming damage type
-	int elementDef = PERS_SKILL(opp, FS_SK_ELEMENT_DEF);
+	int elementDef = fs_clamp_skill(FS_SK_ELEMENT_DEF, PERS_SKILL(opp, FS_SK_ELEMENT_DEF));
 	if (elementDef > 0 && dmgType != FS_PDT_PHYSICAL) {
 		dmg -= dmg * (elementDef / 100.0);
 	}

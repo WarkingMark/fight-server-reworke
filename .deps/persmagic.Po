@@ -50,7 +50,8 @@ persmagic.o: persmagic.c /usr/include/stdc-predef.h common.h \
  /usr/include/limits.h /usr/include/bits/posix1_lim.h \
  /usr/include/bits/local_lim.h /usr/include/linux/limits.h \
  /usr/include/bits/posix2_lim.h /usr/include/lauxlib.h /usr/include/lua.h \
- /usr/include/lualib.h vec.h debug.h pers.h typedefs.h persmagic.h
+ /usr/include/lualib.h vec.h debug.h pers.h typedefs.h formulas.h utils.h \
+ persmagic.h
 
 /usr/include/stdc-predef.h:
 
@@ -275,5 +276,9 @@ debug.h:
 pers.h:
 
 typedefs.h:
+
+formulas.h:
+
+utils.h:
 
 persmagic.h:

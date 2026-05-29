@@ -9,7 +9,7 @@
 SOURCE_DIR = .
 VPATH = $(SOURCE_DIR)
 
-LUA     ?= 5.1
+LUA     ?= 5.
 LUA_INC ?= /usr/include/lua$(LUA)
 LUA_LIB ?= lua$(LUA)
 TOLUA   ?= tolua++$(LUA)
