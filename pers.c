@@ -37,7 +37,7 @@ const int FS_SK_HARD_CAPS[FS_SK_MAXCODE + 1] = {
 	[FS_SK_DMGX_PVE_DEF]  = 90,
 	[FS_SK_ELEMENT_ATK]   = 500,
 	[FS_SK_ELEMENT_DEF]   = 500,
-	[FS_SK_LETHAL_RATE]   = 10,
+	[FS_SK_LETHAL_RATE]   = 50,
 	[FS_SK_BLEED_RESIST]  = 100,
 	[FS_SK_POISON_RESIST] = 100,
 	[FS_SK_DEBUFF_DUR_P]  = 200,
@@ -68,6 +68,10 @@ const int FS_SK_HARD_CAPS[FS_SK_MAXCODE + 1] = {
 	[FS_SK_MULTI_HIT_CHANCE] = 100,
 	[FS_SK_CRIT_CHANCE] = 100,
 	[FS_SK_VAMPIR] = 100,
+	[FS_SK_EVADE_CHANCE_IGNORE] = 80,
+	[FS_SK_BLOCK_CHANCE_IGNORE] = 80,
+	[FS_SK_BUFF_DUR_REDUCE]     = 100,
+	[FS_SK_DEBUFF_DUR_REDUCE]   = 100,
 };
 
 /* Функция применения лимита */
@@ -479,12 +483,14 @@ errno_t fs_persAttack(fs_pers_t *pers, int part, bool wpnEff) {
 	// BLOCK_CHANCE: плоский бонус к pB (от предметов, баффов)
 	// DEX от формулы ограничен 15%, но плоский бонус может добавить сверху
 	int blockChanceFlat = fs_clamp_skill(FS_SK_BLOCK_CHANCE, PERS_SKILL(opp, FS_SK_BLOCK_CHANCE));
+
 	if (blockChanceFlat > 0) {
 		pB = MIN(pB + blockChanceFlat / 100.0, opp->art ? _evPA : 0.80);
 	}
 
 	// EVADE_CHANCE: плоский бонус к pE
 	int evadeChanceFlat = fs_clamp_skill(FS_SK_EVADE_CHANCE, PERS_SKILL(opp, FS_SK_EVADE_CHANCE));
+
 	if (evadeChanceFlat > 0) {
 		pE = MIN(pE + evadeChanceFlat / 100.0, opp->art ? _evPA : 0.80);
 	}
@@ -512,6 +518,18 @@ errno_t fs_persAttack(fs_pers_t *pers, int part, bool wpnEff) {
 	fE = randRoll(pE,&(opp->_rs[_RSC_EVD])) && !randRoll(pAE,&(pers->_rs[_RSC_AEVD]));
 	fC = randRoll(pC,&(pers->_rs[_RSC_CRT])) && !randRoll(pAC,&(opp->_rs[_RSC_ACRT]));
 	fB = randRoll(pB,&(opp->_rs[_RSC_BLK])) && !randRoll(pAB,&(pers->_rs[_RSC_ABLK]));
+
+	// Анти уворот и анти блок
+	if (fE) {
+		int ei = fs_clamp_skill(FS_SK_EVADE_CHANCE_IGNORE, PERS_SKILL(pers, FS_SK_EVADE_CHANCE_IGNORE));
+		if (ei > 0 && randRoll(ei / 100.0, NULL)) fE = false;
+	}
+
+	if (fB) {
+		int bi = fs_clamp_skill(FS_SK_BLOCK_CHANCE_IGNORE, PERS_SKILL(pers, FS_SK_BLOCK_CHANCE_IGNORE));
+		if (bi > 0 && randRoll(bi / 100.0, NULL)) fB = false;
+	}
+
 	if (opp->flags & (FS_PF_STUNNED | FS_PF_MAGIC)) fE = fB = false;
 	if ((pers->flags & FS_PF_CRITSIMILAR) && (opp->flags & FS_PF_CRITSIMILAR)) fC = true;
 
@@ -534,7 +552,9 @@ errno_t fs_persAttack(fs_pers_t *pers, int part, bool wpnEff) {
 	}
 
 	if (fE) fC = false;
+
 	if (fC) fB = false;
+
 	if (fE && fB) {
 		if (pE < pB) fE = false;
 		else fB = false;
@@ -615,8 +635,10 @@ errno_t fs_persAttack(fs_pers_t *pers, int part, bool wpnEff) {
 		}
 		dmg *= 1-Ap; 
 		dmg += dmg * charge.dmgX;	// dmgX charge
+
 		if (pers->flags & FS_PF_DEFENDED) dmg *= _dmgDx;
 		if (opp->flags & FS_PF_DEFENDED) dmg *= _dmgDx;
+
 		dmg = MAX(dmg,1);
 		
 		dmgA *= 1-Ap; 
@@ -974,26 +996,6 @@ errno_t fs_persAttack(fs_pers_t *pers, int part, bool wpnEff) {
 	int multiDamagePercent  = 	fs_clamp_skill(FS_SK_MULTI_HIT_PERCENT_DAMAGE, PERS_SKILL(pers, FS_SK_MULTI_HIT_PERCENT_DAMAGE)); // % урона двойного удара
 	int multiDamageChance  = fs_clamp_skill(FS_SK_MULTI_HIT_CHANCE, PERS_SKILL(pers, FS_SK_MULTI_HIT_CHANCE));  // % урона двойного удара
 
-	// if (multiDamagePercent > 0 && dmg > 0) {
-	// 	bool doHit = (multiDamageChance <= 0) || randRoll(multiDamageChance / 100.0, NULL);
-	// 	if (doHit) {
-	// 		double extraDmg = calc_penetration_dmg(dmgA, multiDamagePercent, multiDamageChance);
-	// 		// Применить DMGX как к основному урону
-	// 		int dmgx = fs_clamp_skill(FS_SK_DMGX, PERS_SKILL(pers, FS_SK_DMGX));
-	// 		if (dmgx > 0) extraDmg *= (1.0 + dmgx / 100.0);
-	// 		bool pvp2 = pers_is_player(opp);
-	// 		if (pvp2) {
-	// 			int px = fs_clamp_skill(FS_SK_DMGX_PVP, PERS_SKILL(pers, FS_SK_DMGX_PVP));
-	// 			if (px > 0) extraDmg *= (1.0 + px / 100.0);
-	// 		} else {
-	// 			int px = fs_clamp_skill(FS_SK_DMGX_PVE, PERS_SKILL(pers, FS_SK_DMGX_PVE));
-	// 			if (px > 0) extraDmg *= (1.0 + px / 100.0);
-	// 		}
-	// 		extraDmg = MAX(extraDmg, 1.0);
-	// 		fs_persDamage(opp, extraDmg, FS_PDT_PHYSICAL, false, pers);
-	// 	}
-	// }
-
 	if (multiDamagePercent > 0 && !fE && !fB && dmg > 0) {
 		bool doHit = (multiDamageChance <= 0)
 				  || randRoll(multiDamageChance / 100.0, NULL);
@@ -1008,8 +1010,10 @@ errno_t fs_persAttack(fs_pers_t *pers, int part, bool wpnEff) {
 				int px = fs_clamp_skill(FS_SK_DMGX_PVE, PERS_SKILL(pers, FS_SK_DMGX_PVE));
 				if (px > 0) extraDmg *= (1.0 + px / 100.0);
 			}
+
 			extraDmg = MAX(extraDmg, 1.0);
-			fs_persDamage(opp, extraDmg, FS_PDT_PHYSICAL, false, pers);
+
+			fs_persDamage(opp, extraDmg, FS_PDT_PHYSICAL, randRoll(pC, NULL), pers);
 		}
 	}
 
@@ -1507,6 +1511,7 @@ double fs___persMaxHonor(fs_pers_t *pers, fs_pers_t *opp, double honor) {
 	return honor;
 }
 
+// TODO: Доделать хилл < 0
 double fs_persDamage(fs_pers_t *pers, double dmg, int dmgType, bool crit, fs_pers_t *activator) {
 	fs_persEff_t      *eff;
 	viter_t           vi;
@@ -1519,6 +1524,7 @@ double fs_persDamage(fs_pers_t *pers, double dmg, int dmgType, bool crit, fs_per
 	}
 	if ((pers->status == FS_PS_DEAD) || (pers->flags & FS_PF_LIFELESS)) return 0;
 	if ((pers->flags & FS_PF_IMMORTAL) && (dmg > 0)) dmg = 0;
+
 	if (dmg > 0) {	// damage
 		if (!dmgType) dmgType = FS_PDT_PHYSICAL;
 		if (activator) {
@@ -1581,6 +1587,7 @@ double fs_persDamage(fs_pers_t *pers, double dmg, int dmgType, bool crit, fs_per
 			} else {
 				// CRIT_DMG_IGNORE: шанс полностью игнорировать крит урон
 				int critDmgIgnore = fs_clamp_skill(FS_SK_CRIT_DMG_IGNORE, PERS_SKILL(pers, FS_SK_CRIT_DMG_IGNORE));
+
 				if (critDmgIgnore > 0 && randRoll(critDmgIgnore / 100.0, NULL)) {
 					crit = false;
 				} else {
@@ -1649,43 +1656,31 @@ double fs_persDamage(fs_pers_t *pers, double dmg, int dmgType, bool crit, fs_per
 
 	else if (dmg < 0) {
 		bool isSelf = (!activator || activator == pers);
-		double heal = -dmg;
-		heal = calc_heal_with_mult(
-			heal,
-			fs_clamp_skill(FS_SK_HEAL_RCVD_MULT, PERS_SKILL(pers, FS_SK_HEAL_RCVD_MULT)),
-			activator ? fs_clamp_skill(FS_SK_HEAL_POWER, PERS_SKILL(activator, FS_SK_HEAL_POWER)) : 0,
-			fs_clamp_skill(FS_SK_SELF_HEAL_MULT,  PERS_SKILL(pers, FS_SK_SELF_HEAL_MULT)),
-			isSelf
-		);
+		// HEAL_POWER: применяется ВСЕГДА (хилер усиливает свои хилы)
+		// Для свитка: activator = pers → берём HEAL_POWER у себя
+		if (activator) {
+			int healPow = fs_clamp_skill(FS_SK_HEAL_POWER,
+										  PERS_SKILL(activator, FS_SK_HEAL_POWER));
+			if (healPow > 0) dmg *= (1.0 + healPow / 100.0);
+		}
 
-		dmg = -MIN(heal, PERS_HPMAX(pers) - PERS_HP(pers));
+		if (isSelf) {
+			// SELF_HEAL_MULT: только самолечение (зелья, свитки, саморегенерация)
+			int selfHeal = fs_clamp_skill(FS_SK_SELF_HEAL_MULT,
+										   PERS_SKILL(pers, FS_SK_SELF_HEAL_MULT));
+			if (selfHeal > 0) dmg *= (1.0 + selfHeal / 100.0);
+		} else {
+			// HEAL_RCVD_MULT: только когда лечит другой персонаж
+			int healRcvd = fs_clamp_skill(FS_SK_HEAL_RCVD_MULT,
+										   PERS_SKILL(pers, FS_SK_HEAL_RCVD_MULT));
+			if (healRcvd > 0) dmg *= (1.0 + healRcvd / 100.0);
+		}
+
+		dmg = -MIN(-dmg, PERS_HPMAX(pers) - PERS_HP(pers));
 	}
 
-	// else if (dmg < 0) {	// heal
-	// 	// HEAL_RCVD_MULT: усиление входящего лечения
-	// 	int healRcvd = fs_clamp_skill(FS_SK_HEAL_RCVD_MULT, PERS_SKILL(pers, FS_SK_HEAL_RCVD_MULT));
-	// 	if (healRcvd > 0) dmg *= (1.0 + healRcvd / 100.0);
-	// 	// HEAL_POWER: усиление исходящего лечения (от активатора)
-	// 	if (activator) {
-	// 		int healPow = fs_clamp_skill(FS_SK_HEAL_POWER, PERS_SKILL(activator, FS_SK_HEAL_POWER));
-	// 		if (healPow > 0) dmg *= (1.0 + healPow / 100.0);
-	// 	}
-	//
-	// 	// SELF_HEAL_MULT: усиление само-хила (активатор = цель, напр. зелья)
-	// 	if (!activator || activator == pers) {
-	// 		int selfHeal = fs_clamp_skill(FS_SK_SELF_HEAL_MULT, PERS_SKILL(pers, FS_SK_SELF_HEAL_MULT));
-	// 		if (selfHeal > 0) dmg *= (1.0 + selfHeal / 100.0);
-	// 	}
-	//
-	// 	dmg = -MIN(-dmg,PERS_HPMAX(pers)-PERS_HP(pers));
-	// }
 	PERS_INTSKILL(pers,FS_SK_HP) -= (int)dmg;
 	PERS_EXTSKILL(pers,FS_SK_HP) -= (int)dmg;
-
-	// if (PERS_HP(pers) <= 0) {
-	// 	pers->flags |= FS_PF_LIFELESS;
-	// 	pers->killer = activator;
-	// }
 
 	if (PERS_HP(pers) <= 0 && pers->status != FS_PS_DEAD) {
 		pers->flags |= FS_PF_LIFELESS;
@@ -2034,6 +2029,39 @@ errno_t fs_persUseEffect(fs_pers_t *pers, fs_persEff_t *eff, fs_pers_t *target, 
 						}
 					}
 				}
+
+				// ─── BUFF_DUR_REDUCE / DEBUFF_DUR_REDUCE ──────────────────────────
+				// Цель может снижать длительность накладываемых эффектов
+				{
+					bool isBuff = (p->teamNum == pers->teamNum); // свой = бафф, чужой = дебафф
+
+					int reduce = 0;
+
+					if (isBuff) {
+						reduce = fs_clamp_skill(FS_SK_BUFF_DUR_REDUCE,
+												 PERS_SKILL(p, FS_SK_BUFF_DUR_REDUCE));
+					} else {
+						reduce = fs_clamp_skill(FS_SK_DEBUFF_DUR_REDUCE,
+												 PERS_SKILL(p, FS_SK_DEBUFF_DUR_REDUCE));
+					}
+
+					if (reduce > 0) {
+						// Найти эффект который только что активировали
+						fs_persEff_t *lastEff = NULL;
+						v_reset(p->effVec, 0);
+						while ((lastEff = v_each(p->effVec, 0))) {
+							if (!(lastEff->flags & FS_PEF_ACTIVE)) continue;
+							if (lastEff->artId != eff->artId) continue;
+							// Нашли — снижаем длительность
+							if (lastEff->actTime > 0) {
+								lastEff->actTime = MAX(1,
+									(int)(lastEff->actTime * (1.0 - reduce / 100.0)));
+								lastEff->eetime = lastEff->estime + lastEff->actTime;
+							}
+							break;
+						}
+					}
+				}
 			}
 		}
 		if (((i == 0) || (i == 20) || (i == 30)) && (eff->dmg > 0)) {	// applying unconditional effect damage
@@ -2262,11 +2290,12 @@ errno_t fs_persRecalcEffects(fs_pers_t *pers) {
 		ticks = 0;
 		fTime = fPeriod = fStart = fEnd = fTrigger = false;
 		fTime = (eff->actTime > 0);
+
 		fPeriod = fTime && (eff->actPeriod > 0);
+
 		if (!eff->estime) {
 			fStart = true;
 			eff->estime = stime;
-
 			// BUFF_DURATION_P / DEBUFF_DURATION_P: modify effect duration
 			int durationMod = 0;
 			if (eff->activator) {
@@ -2294,12 +2323,16 @@ errno_t fs_persRecalcEffects(fs_pers_t *pers) {
 			}
 
 			int adjustedTime = eff->actTime;
+
 			if (durationMod > 0) {
 				adjustedTime += eff->actTime * (durationMod / 100.0);
 			}
+
 			eff->eetime = stime + adjustedTime;
 		}
+
 		fEnd = (eff->eetime <= stime) || (eff->flags & FS_PEF_DROP);
+
 		if (fPeriod) {
 			ticks = eff->actTime/eff->actPeriod;
 			if (!eff->eptime) eff->eptime = stime + eff->actPeriod - 1;	// switching the time shifter to the right of the interval
@@ -2340,21 +2373,6 @@ errno_t fs_persRecalcEffects(fs_pers_t *pers) {
 				break;
 			case FS_PEC_ADDHP:
 				if ((!fTime && fStart) || (fPeriod && fTrigger)) {
-					/*
-					target = eff->activator;
-					if(target){						
-						val = PERS_HPMAX(pers);
-						val2 = PERS_HPMAX(target);					
-						if (eff->i3 > 0)
-						{ 
-							val = (val <= val2 ? PERS_HPMAX(pers) * eff->f1 : PERS_HPMAX(target) * eff->f1);
-						}else{
-							val = PERS_HPMAX(pers) * eff->f1;
-						}					
-					}else{
-						val = PERS_HPMAX(pers) * eff->f1;
-					}
-					*/
 					double percent_hpmod = (double)PERS_EXTSKILL(pers,FS_SK_HPMOD) / 100.0 / ticks;
 					double percent_unhpmod = (double)PERS_EXTSKILL(pers,FS_SK_UNHPMOD) / 100.0 / ticks;
 					if(percent_hpmod < 0) percent_unhpmod = 0;

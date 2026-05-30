@@ -248,14 +248,18 @@ enum fs_skill_e {
 	// CRIT_RESIST - дубликат
 	FS_SK_CRIT_DMG_IGNORE = 128, // % шанс полностью игнорировать крит (урон как обычный)
 	FS_SK_CRIT_DMG_REDUCE = 129, // % снижение входящего крит урона
-	FS_SK_CRIT_CHANCE_PVP = 130, // % снижение шанса крита от игроков
+	FS_SK_CRIT_CHANCE_PVP = 130, // % снижение шанса крита
 	FS_SK_BLOCK_CHANCE = 131,   // прямой % бонус к шансу блока
     FS_SK_EVADE_CHANCE = 132,   // прямой % бонус к шансу уклонения
 	FS_SK_MULTI_HIT_CHANCE = 133, // % шанс двойного удара
 	FS_SK_CRIT_CHANCE = 134,   // плоский % к шансу крита (независимо от INT)
+	FS_SK_EVADE_CHANCE_IGNORE = 135, //  % снижение шанса уворота
+	FS_SK_BLOCK_CHANCE_IGNORE = 136, // % снижение шанса блока
+	FS_SK_BUFF_DUR_REDUCE     = 137, // % снижение уменьшения длительности положительных эффектов
+	FS_SK_DEBUFF_DUR_REDUCE   = 138, // % снижение уменьшения длительности отрициальных эффектов
 };
 
-#define FS_SK_MAXCODE   134
+#define FS_SK_MAXCODE   138
 
 enum fs_persPart_e {
 	FS_PPT_HD1   =  0,
