@@ -1,0 +1,6 @@
+2016-06-01 06:30:44    2964     0  MSG    fclient.c:401(main)	started: fight client tester
+2016-06-01 06:30:44    2964     0  MSG    fclient.c:124(fc_run)	Enter parameters separated with commas to send a command
+2016-06-01 06:30:44    2964     0  MSG    fclient.c:125(fc_run)	Enter 'start/stop' to start/stop unattended fight
+2016-06-01 06:30:44    2964     0  MSG    fclient.c:175(fs_processCommand)	Stop unattended fight
+2016-06-01 06:33:37    2964     0  WARN   fclient.c:218(fc_processReply)	server disconnected
+2016-06-01 06:33:37    2964     0  MSG    fclient.c:408(main)	finished

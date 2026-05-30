@@ -1,0 +1,23 @@
+services:
+  # /opt/game/chatd/bin/chatd -p 32867
+  # 2258 root       20   0 1254M  5444  1036 S  0.0  0.0  0:09.57 ./fightd -h 127.0.0.1 -p 11112 -c 5469 -l -1 -d _fightd.log -f https://dwarpg.fun/private/fsfeedback.php
+  fight-server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: game_fightd
+    hostname: "game_fightd"
+    restart: always
+    volumes:
+      - .:/app
+      - ./game.env:/opt/game/game.env
+      - /var/log/game_docker:/var/log/game_docker
+      - /var/www/game_reworke/public_html/images/data/lua:/var/www/game/public_html/images/data/lua
+      - ./lua:/app/lua
+    working_dir: /app
+    command: sh -c "make fightd && ./fightd -h 0.0.0.0 -p 11112 -c 5469 -l 5 -d /var/log/game_docker/fight_log.log -f https://dev74.dwarpg.fun/private/fsfeedback.php"
+    ports:
+      - "11112:11112"
+      - "5469:5469"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
