@@ -929,7 +929,7 @@ fs_srvStatus_t fs_cmd_SCCT_BIND_PERS(fs_client_t *client, fs_packet_t *inPacket,
 		fs_persEffDelete(eff);
 	}
 	pthread_mutex_lock(&(fight->mutex_lua));
-	if (pers->ctrlFile && (luaif_dofile(fight->L,pers->ctrlFile) != 0)) WARN("Error loading script file: file = %s",pers->ctrlFile);
+	if (pers->ctrlFile && pers->ctrlFile[0] && (luaif_dofile(fight->L,pers->ctrlFile) != 0)) WARN("Error loading script file: file = %s",pers->ctrlFile);
 	pthread_mutex_unlock(&(fight->mutex_lua));
 	v_remove(fs_persVec,pers);
 	fs_fightLockMutex(fight);
