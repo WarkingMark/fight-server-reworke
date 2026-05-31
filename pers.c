@@ -1018,7 +1018,7 @@ errno_t fs_persAttack(fs_pers_t *pers, int part, bool wpnEff) {
 		fs_persRecalcEffects(pers);
 	}
 	
-	if (!fE && randRoll(charge.stunProb,NULL) && !(pers->flags & FS_PF_STUNNED) && !(opp->flags & FS_PF_STUNNED) && opp->stunSafeCnt <= 0) {	// stunning the opponent if no evade //Станим только в случае обхода защиты opp->stunSafeCnt.
+	if (!fE && randRoll(charge.stunProb,NULL) && !(pers->flags & FS_PF_STUNNED) && !(opp->flags & FS_PF_STUNNED) && opp->stunSafeCnt <= 0 && opp->status != FS_PS_DEAD) {	// stunning the opponent if no evade
 		fs_persStun(pers,opp,charge.stunTime,charge.stunCnt);
 	}
 	fs_persDischarge(pers,FS_PDT_PHYSICAL);
@@ -1127,7 +1127,10 @@ errno_t fs_persGetTurn(fs_pers_t *pers) {
 	if(opp){
 		fs_fightPersStatus(opp);
 	}*/
-	if (pers->flags & FS_PF_STUNNED) return fs_persGetTurn(opp);
+	if (pers->flags & FS_PF_STUNNED) {
+		if (opp->flags & FS_PF_STUNNED) return ERR_WRONG_STATE;
+		return fs_persGetTurn(opp);
+	}
 	pers->mtime = fs_stime;
 	fs_persSetEvent(pers,FS_PE_ATTACKNOW,"i",PF_CLMASK(opp->flags));
 	fs_persSetEvent(opp,FS_PE_ATTACKWAIT,0);
@@ -1627,7 +1630,6 @@ double fs_persDamage(fs_pers_t *pers, double dmg, int dmgType, bool crit, fs_per
 		}
 
 		dmg = MIN(PERS_HP(pers),dmg);
-
 		// REFLECTION_DMG_P (depth-limited to prevent stack overflow from mutual reflect chains)
 		{
 			static __thread int _reflectDepth = 0;

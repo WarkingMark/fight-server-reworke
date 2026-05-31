@@ -1,0 +1,4 @@
+*.o
+fightd
+fclient
+.idea
