@@ -446,6 +446,8 @@ errno_t fs_persAttack(fs_pers_t *pers, int part, bool wpnEff) {
 		if (eff) {
 			eff->flags &= ~FS_PEF_PASSTURN;
 			if (fs_persUseEffect(pers,eff,pers,NULL) != OK) wpnEff = 0;
+			opp = pers->opponent;
+			if (!opp) return OK;	// weapon effect killed the opponent
 		} else wpnEff = 0;
 	}
 
@@ -472,28 +474,6 @@ errno_t fs_persAttack(fs_pers_t *pers, int part, bool wpnEff) {
 	pE = apply_flat_evade_bonus(pE, PERS_SKILL(opp, FS_SK_EVADE_CHANCE), opp->art);
 	pC = apply_flat_crit_bonus(pC,  PERS_SKILL(pers, FS_SK_CRIT_CHANCE),   pers->art);
 	pB = apply_flat_block_bonus(pB, PERS_SKILL(opp, FS_SK_BLOCK_CHANCE), opp->art);
-
-	// CRIT_RATE: плоский бонус к крит-шансу
-	int critRate = fs_clamp_skill(FS_SK_CRIT_CHANCE, PERS_SKILL(pers, FS_SK_CRIT_CHANCE));
-
-	if (critRate > 0) {
-		pC = MIN(pC + critRate / 100.0, pers->art ? _evPA : 0.80);
-	}
-
-	// BLOCK_CHANCE: плоский бонус к pB (от предметов, баффов)
-	// DEX от формулы ограничен 15%, но плоский бонус может добавить сверху
-	int blockChanceFlat = fs_clamp_skill(FS_SK_BLOCK_CHANCE, PERS_SKILL(opp, FS_SK_BLOCK_CHANCE));
-
-	if (blockChanceFlat > 0) {
-		pB = MIN(pB + blockChanceFlat / 100.0, opp->art ? _evPA : 0.80);
-	}
-
-	// EVADE_CHANCE: плоский бонус к pE
-	int evadeChanceFlat = fs_clamp_skill(FS_SK_EVADE_CHANCE, PERS_SKILL(opp, FS_SK_EVADE_CHANCE));
-
-	if (evadeChanceFlat > 0) {
-		pE = MIN(pE + evadeChanceFlat / 100.0, opp->art ? _evPA : 0.80);
-	}
 
 	// PHYS_ACCURACY: reduces opponent's evade and block chance (1 pt = 0.01 = 1%)
 	int physAcc = fs_clamp_skill(FS_SK_PHYS_ACCURACY, PERS_SKILL(pers, FS_SK_PHYS_ACCURACY));
@@ -829,6 +809,7 @@ errno_t fs_persAttack(fs_pers_t *pers, int part, bool wpnEff) {
 			if (p == opp) continue;
 			if (p->teamNum != opp->teamNum) continue;
 			if ((p->status != FS_PS_FIGHTING) && (p->status != FS_PS_ACTIVE) && (p->status != FS_PS_PASSIVE)) continue;
+			if (!pers_is_alive(p)) continue;
 			if (aoeHit >= aoeCnt) break;
 
 			double splashDmg = aoeDmg;
@@ -839,6 +820,9 @@ errno_t fs_persAttack(fs_pers_t *pers, int part, bool wpnEff) {
 			}
 
 			splashDmg = fs_persDamage(p, splashDmg, FS_PDT_PHYSICAL, splashCrit, pers);
+
+			if (!pers_is_alive(p) && p->status != FS_PS_DEAD)
+				fs_persDie(p, pers);
 
 			if (splashCrit && pers->flags & FS_PF_CRITSIMILAR) {
 				// always crit similar
@@ -1644,12 +1628,17 @@ double fs_persDamage(fs_pers_t *pers, double dmg, int dmgType, bool crit, fs_per
 
 		dmg = MIN(PERS_HP(pers),dmg);
 
-		// REFLECTION_DMG_P
-		if (activator && (activator != pers)) {
-			int reflectPct = fs_clamp_skill(FS_SK_REFLECTION_DMG_P, PERS_SKILL(pers, FS_SK_REFLECTION_DMG_P));
-			if (reflectPct > 0) {
-				double reflectDmg = dmg * (reflectPct / 100.0);
-				fs_persDamage(activator, reflectDmg, dmgType, false, pers);
+		// REFLECTION_DMG_P (depth-limited to prevent stack overflow from mutual reflect chains)
+		{
+			static __thread int _reflectDepth = 0;
+			if (_reflectDepth < 5 && activator && (activator != pers)) {
+				int reflectPct = fs_clamp_skill(FS_SK_REFLECTION_DMG_P, PERS_SKILL(pers, FS_SK_REFLECTION_DMG_P));
+				if (reflectPct > 0) {
+					double reflectDmg = dmg * (reflectPct / 100.0);
+					_reflectDepth++;
+					fs_persDamage(activator, reflectDmg, dmgType, false, pers);
+					_reflectDepth--;
+				}
 			}
 		}
 	}
