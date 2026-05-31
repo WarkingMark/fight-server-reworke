@@ -401,17 +401,10 @@ void parseCmdLine(int argc, char *argv[]) {
 }
 
 int main(int argc, char *argv[]) {
-	/*parseCmdLine(argc,argv);
-	DEBUG_INIT(fc_debugLevel,fc_debugLog,"fight client tester");
 	if (!fc_host || !fc_port) {
 		MSG("Usage: %s -h <host> -p <port> [-l <debug level>] [-d <debug log>] [-a <auto>] [-s <sleep>] [-c <cmd>]",argv[0]);
 	} else {
 		if (fc_init(fc_host,fc_port) == OK) fc_run();
 		fc_done();
 	}
-	DEBUG_DONE();
-	free(fc_debugLog);
-	*/
-	//POSMOTRIM
-	return 0;
 }

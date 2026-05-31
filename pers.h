@@ -238,28 +238,28 @@ enum fs_skill_e {
 	FS_SK_MP_COST_FLAT    = 122, // плоское снижение затрат маны
 	FS_SK_CHANCE_IGNORE_DEF= 123,// % шанс игнорировать защиты цели
 
-	/* Advanced Mechanics */
-	FS_SK_BLOOD_EXPLOSION = 124, // % шанс взрыва при 3+ стеках кровотечения
+	/* Detonate */
+	FS_SK_DETONATE_CHANCE  = 124, // % шанс детонации эффекта (суммируется с шансом эффекта)
 	FS_SK_MULTI_HIT_PERCENT_DAMAGE = 125, // % урона от двойного удара
 	FS_SK_DEADLY_STRIKE   = 126, // % шанс смертельного удара (поверх крита)
 	FS_SK_DS_DMG          = 127, // % множитель урона при смерт. ударе (50 = x1.5)
-
 	/* Crit Defense */
 	// CRIT_RESIST - дубликат
 	FS_SK_CRIT_DMG_IGNORE = 128, // % шанс полностью игнорировать крит (урон как обычный)
 	FS_SK_CRIT_DMG_REDUCE = 129, // % снижение входящего крит урона
 	FS_SK_CRIT_CHANCE_PVP = 130, // % снижение шанса крита
 	FS_SK_BLOCK_CHANCE = 131,   // прямой % бонус к шансу блока
-    FS_SK_EVADE_CHANCE = 132,   // прямой % бонус к шансу уклонения
+	FS_SK_EVADE_CHANCE = 132,   // прямой % бонус к шансу уклонения
 	FS_SK_MULTI_HIT_CHANCE = 133, // % шанс двойного удара
 	FS_SK_CRIT_CHANCE = 134,   // плоский % к шансу крита (независимо от INT)
 	FS_SK_EVADE_CHANCE_IGNORE = 135, //  % снижение шанса уворота
 	FS_SK_BLOCK_CHANCE_IGNORE = 136, // % снижение шанса блока
 	FS_SK_BUFF_DUR_REDUCE     = 137, // % снижение уменьшения длительности положительных эффектов
 	FS_SK_DEBUFF_DUR_REDUCE   = 138, // % снижение уменьшения длительности отрициальных эффектов
+	FS_SK_DETONATE_STACKS    = 139, // модификатор кол-ва стаков для детонации (плоский бонус к счётчику)
 };
 
-#define FS_SK_MAXCODE   138
+#define FS_SK_MAXCODE   139
 
 enum fs_persPart_e {
 	FS_PPT_HD1   =  0,
@@ -437,7 +437,7 @@ struct fs_persEff_s {
 	fs_persEffCode_t  code;
 	fs_persEffFlags_t flags;
 	double            f1, f2, f3, prob, probAuto, dmgRecalc;
-	int               i1, i2, i3, cnt, artId, grpId, dmg, dmgType, actTime, actMoveCnt, actPeriod, cdTime, cdType, cdGrpId, mp, aoeCnt, slotNum, subSlot, energyCost, turnsLeft;
+	int               i1, i2, i3, cnt, artId, grpId, dmg, dmgType, actTime, actMoveCnt, actPeriod, cdTime, cdType, cdGrpId, mp, aoeCnt, slotNum, subSlot, energyCost, turnsLeft, detStack;
 	int				  e_yarost;
 	fs_skillArr_t     skills;
 	char              *title, *picture, *animData, *slotId;

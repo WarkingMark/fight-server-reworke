@@ -815,6 +815,8 @@ fs_srvStatus_t fs_cmd_SCCT_ADD_EFFECT(fs_client_t *client, fs_packet_t *inPacket
 	eff->probAuto = PARAM_FIXED(PARAM_NEXT(inPacket)); //2012
 	
 	eff->cdType = PARAM_INT(PARAM_NEXT(inPacket));
+	eff->detStack = PARAM_INT(PARAM_NEXT(inPacket));
+
 	v_push(pers->effVec,eff);
 	while ((param = PARAM_NEXT(inPacket))) {
 		if ((PARAM_TYPE(param) != PT_INT) && (PARAM_TYPE(param) != PT_NINT)) {

@@ -41,7 +41,7 @@ double    fs_persPartResistData[4][4] = {
 	{ -0.12,  -0.7, -2.2, 3.03 }
 };
 
-inline fs_skill_t fs_resistSkill(int dmgType) {
+static inline fs_skill_t fs_resistSkill(int dmgType) {
 	return
 		(dmgType & FS_PDT_PHYSICAL    ? FS_SK_RSTPHYSIC:
 		(dmgType & FS_PDT_KIDMAGIC    ? FS_SK_RSTKIDMAG:

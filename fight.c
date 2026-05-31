@@ -565,18 +565,19 @@ errno_t fs_fightUpdateState(fs_fight_t *fight, int *pairMade, int *persActive, i
 	//v_reset(&persVec3,0);
 	//while ((pers3 = v_each(&persVec3,0))) fs_persPersIntelligence(pers3);
 	//v_zero(&persVec3);
-
 	// forming new pairs
 	fs_fightLockMutex(fight);
 	v_reset(fight->persVec,0);
+
 	while ((pers1 = v_each(fight->persVec,0))) {
-		// Kill any LIFELESS that survived bot processing before pairing
+		// // Kill any LIFELESS that survived bot processing before pairing
 		if (pers1->status != FS_PS_DEAD &&
 		    ((pers1->flags & FS_PF_LIFELESS) || PERS_HP(pers1) <= 0)) {
 			fs_persDie(pers1, NULL);
 			(*persDead)++;
 			continue;
 		}
+
 		if (pers1->status != FS_PS_FIGHTING) {
 			if (pers1->status == FS_PS_ACTIVE) (*persActive)++;
 			else if (pers1->status == FS_PS_DEAD) (*persDead)++;

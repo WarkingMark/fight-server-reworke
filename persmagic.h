@@ -12,7 +12,6 @@
 #define LEVEL_DIFF_MAX   10
 
 
-inline fs_skill_t fs_resistSkill(int dmgType);
 double fs_persPartResist(double p);
 double fs_persHitProb(fs_pers_t *pers, fs_pers_t *opp, int dmgType);
 double fs_persResistProb(fs_pers_t *pers, fs_pers_t *opp, int dmgType);

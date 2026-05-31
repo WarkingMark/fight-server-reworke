@@ -1,7 +1,3 @@
-/* 
- * modifed: igorpauk 2017-18
- */
-
 #include "common.h"
 #include "srv.h"
 #include "fight.h"
@@ -57,14 +53,14 @@ const int FS_SK_HARD_CAPS[FS_SK_MAXCODE + 1] = {
 	[FS_SK_MP_COST_REDUCE]= 80,
 	[FS_SK_MP_COST_FLAT]  = 50,
 	[FS_SK_CHANCE_IGNORE_DEF]= 50,
-	[FS_SK_BLOOD_EXPLOSION] = 100,
+	[FS_SK_DETONATE_CHANCE]  = 100,
+	[FS_SK_DETONATE_STACKS]  = 100,
 	[FS_SK_DEADLY_STRIKE]   = 100,
 	[FS_SK_DS_DMG]          = 200,
 	[FS_SK_CRIT_DMG_IGNORE] = 80,
 	[FS_SK_CRIT_DMG_REDUCE] = 75,
 	[FS_SK_CRIT_CHANCE_PVP] = 80,
 	[FS_SK_BLOCK_DMG_P] = 50,
-	[FS_SK_MULTI_HIT_PERCENT_DAMAGE] = 100,
 	[FS_SK_MULTI_HIT_CHANCE] = 100,
 	[FS_SK_CRIT_CHANCE] = 100,
 	[FS_SK_VAMPIR] = 100,
@@ -72,6 +68,7 @@ const int FS_SK_HARD_CAPS[FS_SK_MAXCODE + 1] = {
 	[FS_SK_BLOCK_CHANCE_IGNORE] = 80,
 	[FS_SK_BUFF_DUR_REDUCE]     = 100,
 	[FS_SK_DEBUFF_DUR_REDUCE]   = 100,
+	[FS_SK_MULTI_HIT_PERCENT_DAMAGE] = 100,
 };
 
 /* Функция применения лимита */
@@ -462,6 +459,9 @@ errno_t fs_persAttack(fs_pers_t *pers, int part, bool wpnEff) {
 
 	//DEBUGXXX("BOTATTACK4");
 	bool isDeadlyStrike = false;
+	bool isAdditionStrike = false;
+	bool isAOEStrike = false;
+
 	// event limits
 	evP1 = pers->art ? _evPA: _evP0;
 	evP2 = opp->art ? _evPA: _evP0;
@@ -474,28 +474,6 @@ errno_t fs_persAttack(fs_pers_t *pers, int part, bool wpnEff) {
 	pE = apply_flat_evade_bonus(pE, PERS_SKILL(opp, FS_SK_EVADE_CHANCE), opp->art);
 	pC = apply_flat_crit_bonus(pC,  PERS_SKILL(pers, FS_SK_CRIT_CHANCE),   pers->art);
 	pB = apply_flat_block_bonus(pB, PERS_SKILL(opp, FS_SK_BLOCK_CHANCE), opp->art);
-
-	// CRIT_RATE: плоский бонус к крит-шансу
-	int critRate = fs_clamp_skill(FS_SK_CRIT_CHANCE, PERS_SKILL(pers, FS_SK_CRIT_CHANCE));
-
-	if (critRate > 0) {
-		pC = MIN(pC + critRate / 100.0, pers->art ? _evPA : 0.80);
-	}
-
-	// BLOCK_CHANCE: плоский бонус к pB (от предметов, баффов)
-	// DEX от формулы ограничен 15%, но плоский бонус может добавить сверху
-	int blockChanceFlat = fs_clamp_skill(FS_SK_BLOCK_CHANCE, PERS_SKILL(opp, FS_SK_BLOCK_CHANCE));
-
-	if (blockChanceFlat > 0) {
-		pB = MIN(pB + blockChanceFlat / 100.0, opp->art ? _evPA : 0.80);
-	}
-
-	// EVADE_CHANCE: плоский бонус к pE
-	int evadeChanceFlat = fs_clamp_skill(FS_SK_EVADE_CHANCE, PERS_SKILL(opp, FS_SK_EVADE_CHANCE));
-
-	if (evadeChanceFlat > 0) {
-		pE = MIN(pE + evadeChanceFlat / 100.0, opp->art ? _evPA : 0.80);
-	}
 
 	// PHYS_ACCURACY: reduces opponent's evade and block chance (1 pt = 0.01 = 1%)
 	int physAcc = fs_clamp_skill(FS_SK_PHYS_ACCURACY, PERS_SKILL(pers, FS_SK_PHYS_ACCURACY));
@@ -521,12 +499,13 @@ errno_t fs_persAttack(fs_pers_t *pers, int part, bool wpnEff) {
 	fC = randRoll(pC,&(pers->_rs[_RSC_CRT])) && !randRoll(pAC,&(opp->_rs[_RSC_ACRT]));
 	fB = randRoll(pB,&(opp->_rs[_RSC_BLK])) && !randRoll(pAB,&(pers->_rs[_RSC_ABLK]));
 
-	// Анти уворот и анти блок
+	// Анти уворот
 	if (fE) {
 		int ei = fs_clamp_skill(FS_SK_EVADE_CHANCE_IGNORE, PERS_SKILL(pers, FS_SK_EVADE_CHANCE_IGNORE));
 		if (ei > 0 && randRoll(ei / 100.0, NULL)) fE = false;
 	}
 
+	// Анти блок
 	if (fB) {
 		int bi = fs_clamp_skill(FS_SK_BLOCK_CHANCE_IGNORE, PERS_SKILL(pers, FS_SK_BLOCK_CHANCE_IGNORE));
 		if (bi > 0 && randRoll(bi / 100.0, NULL)) fB = false;
@@ -1020,6 +999,7 @@ errno_t fs_persAttack(fs_pers_t *pers, int part, bool wpnEff) {
 
 			extraDmg = MAX(extraDmg, 1.0);
 
+			isAdditionStrike = true;
 			fs_persDamage(opp, extraDmg, FS_PDT_PHYSICAL, randRoll(pC, NULL), pers);
 		}
 	}
@@ -1654,12 +1634,17 @@ double fs_persDamageEx(fs_pers_t *pers, double dmg, int dmgType, bool crit, fs_p
 
 		dmg = MIN(PERS_HP(pers),dmg);
 
-		// REFLECTION_DMG_P
-		if (activator && (activator != pers)) {
-			int reflectPct = fs_clamp_skill(FS_SK_REFLECTION_DMG_P, PERS_SKILL(pers, FS_SK_REFLECTION_DMG_P));
-			if (reflectPct > 0) {
-				double reflectDmg = dmg * (reflectPct / 100.0);
-				fs_persDamage(activator, reflectDmg, dmgType, false, pers);
+		// REFLECTION_DMG_P (with recursion guard — max 5 reflections in a chain)
+		{
+			static int _reflectDepth = 0;
+			if (_reflectDepth < 5 && activator && (activator != pers)) {
+				int reflectPct = fs_clamp_skill(FS_SK_REFLECTION_DMG_P, PERS_SKILL(pers, FS_SK_REFLECTION_DMG_P));
+				if (reflectPct > 0) {
+					double reflectDmg = dmg * (reflectPct / 100.0);
+					_reflectDepth++;
+					fs_persDamage(activator, reflectDmg, dmgType, false, pers);
+					_reflectDepth--;
+				}
 			}
 		}
 	}
@@ -1898,6 +1883,7 @@ errno_t fs_persUseEffect(fs_pers_t *pers, fs_persEff_t *eff, fs_pers_t *target, 
 		v_init(&v2);
 		fs_fightLockMutex(pers->fight);
 		v_reset(pers->fight->persVec,&vi);
+
 		while ((p = v_each(pers->fight->persVec,&vi))) {
 			if ((p == target) || (p->teamNum != target->teamNum)) continue;
 			if ((p->status != FS_PS_FIGHTING) && (p->status != FS_PS_ACTIVE) && (p->status != FS_PS_PASSIVE)) continue;
@@ -2042,11 +2028,13 @@ errno_t fs_persUseEffect(fs_pers_t *pers, fs_persEff_t *eff, fs_pers_t *target, 
 					int reduce = 0;
 
 					if (isBuff) {
-						reduce = fs_clamp_skill(FS_SK_BUFF_DUR_REDUCE,
-												 PERS_SKILL(p, FS_SK_BUFF_DUR_REDUCE));
-					} else {
+						// DEBUFF_DUR_REDUCE on the target shortens incoming buffs
 						reduce = fs_clamp_skill(FS_SK_DEBUFF_DUR_REDUCE,
 												 PERS_SKILL(p, FS_SK_DEBUFF_DUR_REDUCE));
+					} else {
+						// BUFF_DUR_REDUCE on the target shortens incoming debuffs
+						reduce = fs_clamp_skill(FS_SK_BUFF_DUR_REDUCE,
+												 PERS_SKILL(p, FS_SK_BUFF_DUR_REDUCE));
 					}
 
 					if (reduce > 0) {
@@ -2068,6 +2056,7 @@ errno_t fs_persUseEffect(fs_pers_t *pers, fs_persEff_t *eff, fs_pers_t *target, 
 				}
 			}
 		}
+
 		if (((i == 0) || (i == 20) || (i == 30)) && (eff->dmg > 0)) {	// applying unconditional effect damage
 			if ((i == 0) || (i == 30)) {
 				fs_persGetCharge(pers,eff->dmgType,&charge, false);
@@ -2234,39 +2223,6 @@ void fs___persActivateEffect(fs_pers_t *pers, fs_persEff_t *eff, fs_pers_t *targ
 	
 	effCopy = fs_persEffCopy(eff);
 	if (!effCopy) return;
-
-	// BLOOD_EXPLOSION: check for bleed stack explosion
-	if (effCopy->dmgType & FS_PDT_PHYSICAL && effCopy->f1 < 0 && effCopy->actTime > 0) {
-
-		int bloodExplChance = fs_clamp_skill(FS_SK_BLOOD_EXPLOSION, PERS_SKILL(pers, FS_SK_BLOOD_EXPLOSION));
-
-		if (bloodExplChance > 0) {
-			int bleedStacks = 0;
-
-			viter_t vi;
-
-			fs_persEff_t *existing;
-
-			v_reset(target->effVec, &vi);
-
-			while ((existing = v_current(target->effVec, &vi))) {
-				if ((existing->flags & FS_PEF_ACTIVE) && (existing->dmgType & FS_PDT_PHYSICAL) && existing->f1 < 0 && existing->actTime > 0) {
-					bleedStacks++;
-				}
-				v_next(target->effVec, &vi);
-			}
-			if (bleedStacks >= 2 && randRoll(bloodExplChance / 100.0, NULL)) {
-
-				double explDmg = PERS_HP(target) * (0.05 * (bleedStacks + 1));
-
-				fs_persDamage(target, explDmg, FS_PDT_PHYSICAL, true, pers);
-				if (!pers_is_alive(target)) {
-					fs_persEffDelete(effCopy);
-					return;   // ← цель убита взрывом, не продолжаем
-				}
-			}
-		}
-	}
 
 	effCopy->flags |= FS_PEF_ACTIVE;
 	effCopy->activator = pers;
@@ -2467,7 +2423,60 @@ errno_t fs_persRecalcEffects(fs_pers_t *pers) {
 					fs_pers_t *healer = eff->activator ? eff->activator : pers;
 					// noEnhance (f3>=1) applies only to damage ticks, heals always get enhancement
 					bool _noEnhance = (finalDmg > 0) && (eff->f3 >= 1);
+
+					// ── DETONATE ────────────────────────────────────────────────
+					// Проверка: эффект помечен как детонируемый и это не хил
+					bool _detonated = false;
+					if (eff->detStack > 0 && finalDmg != 0 && eff->activator) {
+						// Считаем активные стаки этого же эффекта на цели
+						int realStacks = 0;
+						{
+							viter_t sv;
+							fs_persEff_t *se;
+							v_reset(pers->effVec, &sv);
+							while ((se = v_current(pers->effVec, &sv))) {
+								if ((se->flags & FS_PEF_ACTIVE) && se->id == eff->id && se->detStack > 0) {
+									realStacks++;
+								}
+								v_next(pers->effVec, &sv);
+							}
+						}
+						// Бонус стаков от персонажа
+						int bonusStacks = fs_clamp_skill(FS_SK_DETONATE_STACKS,
+											PERS_SKILL(eff->activator, FS_SK_DETONATE_STACKS));
+						int totalStacks = realStacks + bonusStacks;
+
+						if (totalStacks >= eff->detStack) {
+							// Общий шанс = prob эффекта + DETONATE_CHANCE персонажа
+							int detChance = (int)eff->prob
+										  + fs_clamp_skill(FS_SK_DETONATE_CHANCE,
+												PERS_SKILL(eff->activator, FS_SK_DETONATE_CHANCE));
+							detChance = MIN(detChance, 100);
+							if (detChance > 0 && randRoll(detChance / 100.0, NULL)) {
+								// Детонация: остаток тиков × стаки × урон тика
+								int remainingTicks = MAX(1, (eff->eetime - fs_stime) / eff->actPeriod);
+								double detDmg = finalDmg * remainingTicks * realStacks;
+								finalDmg += detDmg;
+								_detonated = true;
+							}
+						}
+					}
+
 					fs_persDamageEx(pers, finalDmg, eff->dmgType, false, healer, _noEnhance);
+
+					// Если детонировали — снимаем все стаки эффекта с цели
+					if (_detonated) {
+						viter_t sv2;
+						fs_persEff_t *se2;
+						v_reset(pers->effVec, &sv2);
+						while ((se2 = v_current(pers->effVec, &sv2))) {
+							if (se2 != eff && (se2->flags & FS_PEF_ACTIVE) && se2->id == eff->id && se2->detStack > 0) {
+								se2->flags |= FS_PEF_DROP;
+							}
+							v_next(pers->effVec, &sv2);
+						}
+						fEnd = true;	// текущий экземпляр тоже убираем
+					}
 				}
 				break;
 			case FS_PEC_MODHP:
