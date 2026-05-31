@@ -1,3 +1,4 @@
 *.o
 fclient
 fightd
+.idea
