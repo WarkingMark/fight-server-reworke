@@ -2,3 +2,5 @@
 fightd
 fclient
 .idea
+*.sql
+*.log
