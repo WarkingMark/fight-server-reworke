@@ -489,6 +489,7 @@ double fs_persGetExp(fs_pers_t *pers, fs_pers_t *opp, double dmg);
 double fs_persGetHonor(fs_pers_t *pers, fs_pers_t *opp, double dmg);
 double fs___persMaxHonor(fs_pers_t *pers, fs_pers_t *opp, double honor);
 double fs_persDamage(fs_pers_t *pers, double dmg, int dmgType, bool crit, fs_pers_t *activator);
+double fs_persDamageEx(fs_pers_t *pers, double dmg, int dmgType, bool crit, fs_pers_t *activator, bool noEnhance);
 int fs_persConsumeManna(fs_pers_t *pers, int manna, bool silent);
 errno_t fs_persUseEffect(fs_pers_t *pers, fs_persEff_t *eff, fs_pers_t *target, int *usageStatus);
 errno_t fs___persEffectTargetCheck(fs_pers_t *pers, fs_persEff_t *eff, fs_pers_t *target, int *usageStatus);

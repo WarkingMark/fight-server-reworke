@@ -22,7 +22,6 @@ char           *fs_debugLog = NULL;
 char           *fs_feedbackUrl = NULL;
 char           *checkStr = NULL;
 //MD5    			digestMd5;
-
 void parseCmdLine(int argc, char *argv[]) {
 	int opt;
 	while ((opt = getopt(argc, argv, "h:p:c:l:d:f:")) != -1) {

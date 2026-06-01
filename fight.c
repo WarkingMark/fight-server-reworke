@@ -40,7 +40,13 @@ fs_fight_t *fs_fightCreate(int id) {
 	fight->persLuaParams = v_init(NULL);
 
 	luaif_init(fight);
-	pthread_mutex_init(&(fight->mutex),NULL);
+	{
+		pthread_mutexattr_t mattr;
+		pthread_mutexattr_init(&mattr);
+		pthread_mutexattr_settype(&mattr, PTHREAD_MUTEX_RECURSIVE);
+		pthread_mutex_init(&(fight->mutex), &mattr);
+		pthread_mutexattr_destroy(&mattr);
+	}
 	pthread_mutex_init(&(fight->mutex_cl),NULL);
 	pthread_mutex_init(&(fight->mutex_lua),NULL);
 	return fight;
@@ -549,7 +555,6 @@ errno_t fs_fightUpdateState(fs_fight_t *fight, int *pairMade, int *persActive, i
 		}*/
 	}
 	fs_fightUnlockMutex(fight);
-
 	// running bots
 	v_reset(&persVec1,0);
 	while ((pers1 = v_each(&persVec1,0))) fs_persBotIntelligence(pers1);

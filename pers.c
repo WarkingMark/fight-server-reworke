@@ -1500,6 +1500,10 @@ double fs___persMaxHonor(fs_pers_t *pers, fs_pers_t *opp, double honor) {
 
 // TODO: Доделать хилл < 0
 double fs_persDamage(fs_pers_t *pers, double dmg, int dmgType, bool crit, fs_pers_t *activator) {
+	return fs_persDamageEx(pers, dmg, dmgType, crit, activator, false);
+}
+
+double fs_persDamageEx(fs_pers_t *pers, double dmg, int dmgType, bool crit, fs_pers_t *activator, bool noEnhance) {
 	fs_persEff_t      *eff;
 	viter_t           vi;
 	int               i, absorb = 0, cxMagDefInt = 0, cxMagDmgInt = 0;
@@ -1646,27 +1650,20 @@ double fs_persDamage(fs_pers_t *pers, double dmg, int dmgType, bool crit, fs_per
 	}
 
 	else if (dmg < 0) {
-		bool isSelf = (!activator || activator == pers);
-		// HEAL_POWER: применяется ВСЕГДА (хилер усиливает свои хилы)
-		// Для свитка: activator = pers → берём HEAL_POWER у себя
-		if (activator) {
-			int healPow = fs_clamp_skill(FS_SK_HEAL_POWER,
-										  PERS_SKILL(activator, FS_SK_HEAL_POWER));
-			if (healPow > 0) dmg *= (1.0 + healPow / 100.0);
+		if (!noEnhance) {
+			bool isSelf = (!activator || activator == pers);
+			if (activator) {
+				int healPow = fs_clamp_skill(FS_SK_HEAL_POWER, PERS_SKILL(activator, FS_SK_HEAL_POWER));
+				if (healPow > 0) dmg *= (1.0 + healPow / 100.0);
+			}
+			if (isSelf) {
+				int selfHeal = fs_clamp_skill(FS_SK_SELF_HEAL_MULT, PERS_SKILL(pers, FS_SK_SELF_HEAL_MULT));
+				if (selfHeal > 0) dmg *= (1.0 + selfHeal / 100.0);
+			} else {
+				int healRcvd = fs_clamp_skill(FS_SK_HEAL_RCVD_MULT, PERS_SKILL(pers, FS_SK_HEAL_RCVD_MULT));
+				if (healRcvd > 0) dmg *= (1.0 + healRcvd / 100.0);
+			}
 		}
-
-		if (isSelf) {
-			// SELF_HEAL_MULT: только самолечение (зелья, свитки, саморегенерация)
-			int selfHeal = fs_clamp_skill(FS_SK_SELF_HEAL_MULT,
-										   PERS_SKILL(pers, FS_SK_SELF_HEAL_MULT));
-			if (selfHeal > 0) dmg *= (1.0 + selfHeal / 100.0);
-		} else {
-			// HEAL_RCVD_MULT: только когда лечит другой персонаж
-			int healRcvd = fs_clamp_skill(FS_SK_HEAL_RCVD_MULT,
-										   PERS_SKILL(pers, FS_SK_HEAL_RCVD_MULT));
-			if (healRcvd > 0) dmg *= (1.0 + healRcvd / 100.0);
-		}
-
 		dmg = -MIN(-dmg, PERS_HPMAX(pers) - PERS_HP(pers));
 	}
 
@@ -2353,13 +2350,29 @@ errno_t fs_persRecalcEffects(fs_pers_t *pers) {
 					val = eff->skills[skill];
 					if ((!fTime && fStart) || (fPeriod && fTrigger)) {
 						if (skill == FS_SK_HP) {
-							fs_persDamage(pers,(eff->dmgRecalc ? eff->dmgRecalc : -val),eff->dmgType,false,eff->activator);
+							double _healDmg = eff->dmgRecalc ? eff->dmgRecalc : -val;
+							if (_healDmg < 0) {
+								fs_pers_t *_h = eff->activator ? eff->activator : pers;
+								bool _isSelf = (_h == pers);
+								int _hp = fs_clamp_skill(FS_SK_HEAL_POWER, PERS_SKILL(_h, FS_SK_HEAL_POWER));
+								int _sm = _isSelf ? fs_clamp_skill(FS_SK_SELF_HEAL_MULT, PERS_SKILL(pers, FS_SK_SELF_HEAL_MULT)) : 0;
+								int _rm = !_isSelf ? fs_clamp_skill(FS_SK_HEAL_RCVD_MULT, PERS_SKILL(pers, FS_SK_HEAL_RCVD_MULT)) : 0;
+								if (_hp > 0) _healDmg *= (1.0 + _hp / 100.0);
+								if (_sm > 0) _healDmg *= (1.0 + _sm / 100.0);
+								if (_rm > 0) _healDmg *= (1.0 + _rm / 100.0);
+							}
+							fs_persDamageEx(pers, _healDmg, eff->dmgType, false, eff->activator, true);
 						} else if (skill == FS_SK_MP) {
 							fs_persConsumeManna(pers,-val,!eff->id);
 						} else {
 							PERS_INTSKILL(pers,skill) += val;
 						}	
-					} else if (fTime && !fPeriod && !fEnd) tmpSkills[skill] += val;
+					} else if (fTime && !fPeriod && !fEnd) {
+						if (val != 0 && (eff->flags & FS_PEF_WEAPONEFFECT))
+
+							WARN("WPNSKILL persId=%d effId=%d skill=%d val=%d", pers->id, eff->id, skill, val);
+						tmpSkills[skill] += val;
+					}
 				}
 				break;
 			case FS_PEC_ADDHP:
@@ -2406,8 +2419,16 @@ errno_t fs_persRecalcEffects(fs_pers_t *pers) {
 					}
 
 					fs_pers_t *healer = eff->activator ? eff->activator : pers;
-					// fs_persDamage(pers, finalDmg, eff->dmgType, false, eff->activator);
-					fs_persDamage(pers, finalDmg, eff->dmgType, false, healer);
+					if (finalDmg < 0) {
+						bool isSelf = (healer == pers);
+						int hp = fs_clamp_skill(FS_SK_HEAL_POWER, PERS_SKILL(healer, FS_SK_HEAL_POWER));
+						int sm = isSelf  ? fs_clamp_skill(FS_SK_SELF_HEAL_MULT, PERS_SKILL(pers, FS_SK_SELF_HEAL_MULT)) : 0;
+						int rm = !isSelf ? fs_clamp_skill(FS_SK_HEAL_RCVD_MULT, PERS_SKILL(pers, FS_SK_HEAL_RCVD_MULT)) : 0;
+						if (hp > 0) finalDmg *= (1.0 + hp / 100.0);
+						if (sm > 0) finalDmg *= (1.0 + sm / 100.0);
+						if (rm > 0) finalDmg *= (1.0 + rm / 100.0);
+					}
+					fs_persDamageEx(pers, finalDmg, eff->dmgType, false, healer, true);
 				}
 				break;
 			case FS_PEC_MODHP:
@@ -2418,7 +2439,23 @@ errno_t fs_persRecalcEffects(fs_pers_t *pers) {
 					val = PERS_HPMAX(pers->opponent) * (eff->f1); //Берем у оппонента
 				}
 				if (eff->i2 > 0) val = MAX(MIN(val,eff->i2),-eff->i2);	// max value
-				fs_persDamage(pers,-val,eff->dmgType,false,eff->activator);
+				{
+					double _healDmg = -val;
+					if (_healDmg < 0) {
+						fs_pers_t *_h = eff->activator ? eff->activator : pers;
+						bool _isSelf = (_h == pers);
+						int _hp = fs_clamp_skill(FS_SK_HEAL_POWER, PERS_SKILL(_h, FS_SK_HEAL_POWER));
+						if (_hp > 0) _healDmg *= (1.0 + _hp / 100.0);
+						if (_isSelf) {
+							int _sm = fs_clamp_skill(FS_SK_SELF_HEAL_MULT, PERS_SKILL(pers, FS_SK_SELF_HEAL_MULT));
+							if (_sm > 0) _healDmg *= (1.0 + _sm / 100.0);
+						} else {
+							int _rm = fs_clamp_skill(FS_SK_HEAL_RCVD_MULT, PERS_SKILL(pers, FS_SK_HEAL_RCVD_MULT));
+							if (_rm > 0) _healDmg *= (1.0 + _rm / 100.0);
+						}
+					}
+					fs_persDamageEx(pers, _healDmg, eff->dmgType, false, eff->activator, true);
+				}
 				break;
 			case FS_PEC_ADDMP:
 				if ((!fTime && fStart) || (fPeriod && fTrigger)) {
