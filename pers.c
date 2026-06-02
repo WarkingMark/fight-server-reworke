@@ -663,6 +663,7 @@ errno_t fs_persAttack(fs_pers_t *pers, int part, bool wpnEff) {
 	/*calc dmg*/
 	if (!fE && !fB) {
 		dmg = randDouble(0,dmgMax-dmgMin+1,NULL)/2 + randDouble(0,dmgMax-dmgMin+1,NULL)/2 + dmgMin;
+		if (pers->multiHitScale > 0.0) dmg *= pers->multiHitScale;
 		if (randRoll(charge.critProb,NULL)) fC = true;
 		if (opp->flags & FS_PF_MAGIC) fC = false;
 		dmgA = dmg;
@@ -819,6 +820,7 @@ errno_t fs_persAttack(fs_pers_t *pers, int part, bool wpnEff) {
 
 	if (fB) {
 		int blockDmgP = fs_clamp_skill(FS_SK_BLOCK_DMG_P, PERS_SKILL(opp, FS_SK_BLOCK_DMG_P));
+
 		if (blockDmgP <= 0) {
 			dmg = 0; dmgA = 0;
 		} else {
@@ -1102,27 +1104,19 @@ errno_t fs_persAttack(fs_pers_t *pers, int part, bool wpnEff) {
 	}
 
 	// Двойной удар
-	int multiDamagePercent  = 	fs_clamp_skill(FS_SK_MULTI_HIT_PERCENT_DAMAGE, PERS_SKILL(pers, FS_SK_MULTI_HIT_PERCENT_DAMAGE)); // % урона двойного удара
-	int multiDamageChance  = fs_clamp_skill(FS_SK_MULTI_HIT_CHANCE, PERS_SKILL(pers, FS_SK_MULTI_HIT_CHANCE));  // % урона двойного удара
+	{
+		int multiDamagePercent = fs_clamp_skill(FS_SK_MULTI_HIT_PERCENT_DAMAGE, PERS_SKILL(pers, FS_SK_MULTI_HIT_PERCENT_DAMAGE));
+		int multiDamageChance  = fs_clamp_skill(FS_SK_MULTI_HIT_CHANCE, PERS_SKILL(pers, FS_SK_MULTI_HIT_CHANCE));
 
-	if (multiDamagePercent > 0 && !fE && !fB && dmg > 0) {
-		bool doHit = (multiDamageChance <= 0)
-				  || randRoll(multiDamageChance / 100.0, NULL);
-		if (doHit) {
-			double extraDmg = dmgA * (multiDamagePercent / 100.0);
-			int dmgx = fs_clamp_skill(FS_SK_DMGX, PERS_SKILL(pers, FS_SK_DMGX));
-			if (dmgx > 0) extraDmg *= (1.0 + dmgx / 100.0);
-			if (pers_is_player(opp)) {
-				int px = fs_clamp_skill(FS_SK_DMGX_PVP, PERS_SKILL(pers, FS_SK_DMGX_PVP));
-				if (px > 0) extraDmg *= (1.0 + px / 100.0);
-			} else {
-				int px = fs_clamp_skill(FS_SK_DMGX_PVE, PERS_SKILL(pers, FS_SK_DMGX_PVE));
-				if (px > 0) extraDmg *= (1.0 + px / 100.0);
+		if (multiDamagePercent > 0 && !fE && !fB && dmg > 0 && !(pers->flags & FS_PF_IN_MULTIHIT)) {
+			bool doHit = (multiDamageChance <= 0) || randRoll(multiDamageChance / 100.0, NULL);
+			if (doHit && pers_is_alive(opp)) {
+				pers->flags      |= FS_PF_IN_MULTIHIT;
+				pers->multiHitScale = multiDamagePercent / 100.0;
+				fs_persAttack(pers, part, false);
+				pers->multiHitScale = 0.0;
+				pers->flags      &= ~FS_PF_IN_MULTIHIT;
 			}
-
-			extraDmg = MAX(extraDmg, 1.0);
-
-			fs_persDamage(opp, extraDmg, FS_PDT_PHYSICAL, randRoll(pC, NULL), pers);
 		}
 	}
 
@@ -1751,7 +1745,7 @@ double fs_persDamageEx(fs_pers_t *pers, double dmg, int dmgType, bool crit, fs_p
 			if (addMultDmg > 0) dmg += dmg * (addMultDmg / 100.0);
 		}
 
-		dmg = MAX(dmg, 0);
+		dmg = MAX(dmg, 1.0);
 
 		// MANA_SHIELD
 		int manaShield = fs_clamp_skill(FS_SK_MANA_SHIELD, PERS_SKILL(pers, FS_SK_MANA_SHIELD));
@@ -2747,14 +2741,21 @@ errno_t fs_persRecalcEffects(fs_pers_t *pers) {
 	// HPMAX can't be less than 0
 	PERS_INTSKILL(pers,FS_SK_HPMAX) = MAX(PERS_INTSKILL(pers,FS_SK_HPMAX), 0);
 	PERS_EXTSKILL(pers,FS_SK_HPMAX) = MAX(PERS_EXTSKILL(pers,FS_SK_HPMAX), 0);
-	// MAXHP_BONUS_P: % бонус к макс HP
+	// MAXHP_BONUS_P: % бонус к макс HP и текущему HP
 	{
 		int hpBonusP = fs_clamp_skill(FS_SK_MAXHP_BONUS_P, PERS_EXTSKILL(pers, FS_SK_MAXHP_BONUS_P));
+
 		if (hpBonusP > 0) {
-			PERS_INTSKILL(pers,FS_SK_HPMAX) += (int)(PERS_INTSKILL(pers,FS_SK_HPMAX) * hpBonusP / 100.0);
-			PERS_EXTSKILL(pers,FS_SK_HPMAX) += (int)(PERS_EXTSKILL(pers,FS_SK_HPMAX) * hpBonusP / 100.0);
+			int intBonus = (int)(PERS_INTSKILL(pers,FS_SK_HPMAX) * hpBonusP / 100.0);
+			int extBonus = (int)(PERS_EXTSKILL(pers,FS_SK_HPMAX) * hpBonusP / 100.0);
+			PERS_INTSKILL(pers,FS_SK_HPMAX) += intBonus;
+			PERS_EXTSKILL(pers,FS_SK_HPMAX) += extBonus;
+			// Only extSkills[HP] — intSkills[HP] is the PHP-sent base and must not be touched,
+			// because extSkills is reset to intSkills each recalc (line ~2733)
+			PERS_EXTSKILL(pers,FS_SK_HP)    += extBonus;
 		}
 	}
+
 	// HP appropriate shift
 	PERS_INTSKILL(pers,FS_SK_HP) -= MAX(PERS_HP(pers) - PERS_HPMAX(pers), 0);
 	PERS_EXTSKILL(pers,FS_SK_HP) -= MAX(PERS_HP(pers) - PERS_HPMAX(pers), 0);
@@ -2764,12 +2765,15 @@ errno_t fs_persRecalcEffects(fs_pers_t *pers) {
 	// MPMAX can't be less than 0
 	PERS_INTSKILL(pers,FS_SK_MPMAX) = MAX(PERS_INTSKILL(pers,FS_SK_MPMAX), 0);
 	PERS_EXTSKILL(pers,FS_SK_MPMAX) = MAX(PERS_EXTSKILL(pers,FS_SK_MPMAX), 0);
-	// MAXMP_BONUS_P: % бонус к макс MP
+	// MAXMP_BONUS_P: % бонус к макс MP и текущему MP
 	{
 		int mpBonusP = fs_clamp_skill(FS_SK_MAXMP_BONUS_P, PERS_EXTSKILL(pers, FS_SK_MAXMP_BONUS_P));
 		if (mpBonusP > 0) {
-			PERS_INTSKILL(pers,FS_SK_MPMAX) += (int)(PERS_INTSKILL(pers,FS_SK_MPMAX) * mpBonusP / 100.0);
-			PERS_EXTSKILL(pers,FS_SK_MPMAX) += (int)(PERS_EXTSKILL(pers,FS_SK_MPMAX) * mpBonusP / 100.0);
+			int intBonus = (int)(PERS_INTSKILL(pers,FS_SK_MPMAX) * mpBonusP / 100.0);
+			int extBonus = (int)(PERS_EXTSKILL(pers,FS_SK_MPMAX) * mpBonusP / 100.0);
+			PERS_INTSKILL(pers,FS_SK_MPMAX) += intBonus;
+			PERS_EXTSKILL(pers,FS_SK_MPMAX) += extBonus;
+			PERS_EXTSKILL(pers,FS_SK_MP)    += extBonus;
 		}
 	}
 	// MP appropriate shift

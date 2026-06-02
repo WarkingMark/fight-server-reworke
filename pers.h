@@ -91,6 +91,7 @@ enum fs_persFlags_e {
 	FS_PF_NO_AURAS	  = 0x10000000, //268435456
 	FS_PF_NO_OPP_AUTO = 0x20000000, //536870912
 	FS_PF_SHADOW	  = 0x40000000, //1073741824
+	FS_PF_IN_MULTIHIT = 0x00800000, // guard: this attack is already a multi-hit, do not chain
 	
 };
 
@@ -251,7 +252,7 @@ enum fs_skill_e {
 	FS_SK_CRIT_CHANCE = 134,   // плоский % к шансу крита (независимо от INT)
 	
 	FS_SK_EVADE_CHANCE_IGNORE = 135, //  % снижение шанса уворота
-	FS_SK_BLOCK_CHANCE_IGNORE = 136, // % снижение шанса блока
+	FS_SK_BLOCK_CHANCE_IGNORE = 136, //explodeStacks % снижение шанса блока
 	FS_SK_BUFF_DUR_REDUCE     = 137, // % снижение уменьшения длительности положительных эффектов
 	FS_SK_DEBUFF_DUR_REDUCE   = 138, // % снижение уменьшения длительности отрициальных эффектов
 	/* Stack Explosion */
@@ -260,6 +261,7 @@ enum fs_skill_e {
 	/* Debuff Enhancement */
 	FS_SK_DEBUFF_POWER_P      = 141, // % усиления всех негативных эффектов при наложении на врага
 	/* Max HP/MP bonus */
+
 	FS_SK_MAXHP_BONUS_P       = 142, // % бонус к максимальному HP персонажа
 	FS_SK_MAXMP_BONUS_P       = 143, // % бонус к максимальному MP персонажа
 	/* Damage from target's max HP */
@@ -270,7 +272,6 @@ enum fs_skill_e {
 	/* Mana burn */
 	FS_SK_MANA_BURN_P         = 147, // наносит X% от текущей маны цели как доп урон (и сжигает её)
 };
-
 #define FS_SK_MAXCODE   147
 
 enum fs_persPart_e {
@@ -442,6 +443,7 @@ struct fs_pers_s {
 
 	unsigned          _rs[_RSC_MAXCODE+1];
 	int               _dmgEventCnt, _dieEventCnt;
+	double            multiHitScale; // >0: this attack is a multi-hit scaled by this factor
 };
 
 struct fs_persEff_s {
@@ -456,7 +458,7 @@ struct fs_persEff_s {
 	char              *title, *picture, *animData, *slotId;
 
 	fs_pers_t         *activator;
-};ли
+};
 
 struct fs_persCmb_s {
 	int               id;

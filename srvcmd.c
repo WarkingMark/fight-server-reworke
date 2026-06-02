@@ -562,7 +562,9 @@ fs_srvStatus_t fs_cmd_SCCT_CREATE_PERS(fs_client_t *client, fs_packet_t *inPacke
 		
 		pers->yarost_max = PARAM_INT(PARAM_NEXT(inPacket)); //yarost_max;
 	}
+
 	v_push(fs_persVec,pers);
+
 	if (!pers->partMask) pers->partMask = 63;
 	pers->art = (pers->flags & FS_PF_ART) > 0;
 	pers->pettime = time(NULL);
@@ -766,15 +768,14 @@ fs_srvStatus_t fs_cmd_SCCT_ADD_EFFECT(fs_client_t *client, fs_packet_t *inPacket
 		PT_INT, //30
 		PT_INT, //31
 		PT_FIXED, //32
-		PT_INT, //33
-		PT_INT  //34
+		PT_INT  //33
 	};
 	fs_param_t        *param;
 	fs_pers_t         *pers;
 	fs_persEff_t      *eff;
 	fs_skill_t        skill;
 
-	if (fs_cmdCheckParams(inPacket,paramTypes,34,true,true) != OK) {
+	if (fs_cmdCheckParams(inPacket,paramTypes,33,true,true) != OK) {
 		WARN("Invalid parameters");
 		return FS_SS_WRONG_ARGS;
 	}
@@ -816,7 +817,7 @@ fs_srvStatus_t fs_cmd_SCCT_ADD_EFFECT(fs_client_t *client, fs_packet_t *inPacket
 	eff->probAuto = PARAM_FIXED(PARAM_NEXT(inPacket)); //2012
 	
 	eff->cdType = PARAM_INT(PARAM_NEXT(inPacket));
-	eff->explodeStacks = PARAM_INT(PARAM_NEXT(inPacket));
+	eff->explodeStacks = 0;
 	v_push(pers->effVec,eff);
 
 	while ((param = PARAM_NEXT(inPacket))) {
