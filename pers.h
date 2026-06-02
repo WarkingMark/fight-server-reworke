@@ -229,21 +229,17 @@ enum fs_skill_e {
 	FS_SK_REFLECTION_DMG_P= 117, // % возврата урона при получении удара (макс 100%)
 	FS_SK_MANA_SHIELD     = 118, // % урона снимаемого с MP вместо HP
 	FS_SK_CRIT_RESIST     = 119, // % шанс превратить крит в обычный удар
-
 	/* Execute */
 	FS_SK_EXECUTE_P       = 120, // % доп урона если у цели HP < 30%
-
 	/* Utility */
 	FS_SK_MP_COST_REDUCE  = 121, // % снижения затрат маны
 	FS_SK_MP_COST_FLAT    = 122, // плоское снижение затрат маны
 	FS_SK_CHANCE_IGNORE_DEF= 123,// % шанс игнорировать защиты цели
-
 	/* Advanced Mechanics */
-	FS_SK_BLOOD_EXPLOSION = 124, // % шанс взрыва при 3+ стеках кровотечения
+	FS_SK_EXPLODE_CHANCE  = 124, // % шанс взрыва при накоплении стаков кровотечения
 	FS_SK_MULTI_HIT_PERCENT_DAMAGE = 125, // % урона от двойного удара
 	FS_SK_DEADLY_STRIKE   = 126, // % шанс смертельного удара (поверх крита)
 	FS_SK_DS_DMG          = 127, // % множитель урона при смерт. ударе (50 = x1.5)
-
 	/* Crit Defense */
 	// CRIT_RESIST - дубликат
 	FS_SK_CRIT_DMG_IGNORE = 128, // % шанс полностью игнорировать крит (урон как обычный)
@@ -253,13 +249,29 @@ enum fs_skill_e {
     FS_SK_EVADE_CHANCE = 132,   // прямой % бонус к шансу уклонения
 	FS_SK_MULTI_HIT_CHANCE = 133, // % шанс двойного удара
 	FS_SK_CRIT_CHANCE = 134,   // плоский % к шансу крита (независимо от INT)
+	
 	FS_SK_EVADE_CHANCE_IGNORE = 135, //  % снижение шанса уворота
 	FS_SK_BLOCK_CHANCE_IGNORE = 136, // % снижение шанса блока
 	FS_SK_BUFF_DUR_REDUCE     = 137, // % снижение уменьшения длительности положительных эффектов
 	FS_SK_DEBUFF_DUR_REDUCE   = 138, // % снижение уменьшения длительности отрициальных эффектов
+	/* Stack Explosion */
+	FS_SK_EXPLODE_STACK_BONUS = 139, // увеличивает макс. кол-во стаков до взрыва (больше стаков = больше урона)
+	FS_SK_EXPLODE_DMG_P       = 140, // % бонус к урону взрыва стаков
+	/* Debuff Enhancement */
+	FS_SK_DEBUFF_POWER_P      = 141, // % усиления всех негативных эффектов при наложении на врага
+	/* Max HP/MP bonus */
+	FS_SK_MAXHP_BONUS_P       = 142, // % бонус к максимальному HP персонажа
+	FS_SK_MAXMP_BONUS_P       = 143, // % бонус к максимальному MP персонажа
+	/* Damage from target's max HP */
+	FS_SK_DMG_FROM_TARHP_P    = 144, // наносит X% от макс HP цели как доп урон к каждому удару
+	/* Berserker / threshold */
+	FS_SK_RAGE_DMG_P          = 145, // % бонус урона когда своё HP < 30%
+	FS_SK_LOW_HP_DEF_P        = 146, // % снижение входящего урона когда своё HP < 30%
+	/* Mana burn */
+	FS_SK_MANA_BURN_P         = 147, // наносит X% от текущей маны цели как доп урон (и сжигает её)
 };
 
-#define FS_SK_MAXCODE   138
+#define FS_SK_MAXCODE   147
 
 enum fs_persPart_e {
 	FS_PPT_HD1   =  0,
@@ -437,13 +449,14 @@ struct fs_persEff_s {
 	fs_persEffCode_t  code;
 	fs_persEffFlags_t flags;
 	double            f1, f2, f3, prob, probAuto, dmgRecalc;
-	int               i1, i2, i3, cnt, artId, grpId, dmg, dmgType, actTime, actMoveCnt, actPeriod, cdTime, cdType, cdGrpId, mp, aoeCnt, slotNum, subSlot, energyCost, turnsLeft;
+	int               i1, i2, i3, cnt, artId, grpId, dmg, dmgType, actTime, actMoveCnt, actPeriod, cdTime, cdType, cdGrpId, mp, aoeCnt, slotNum, subSlot, energyCost, turnsLeft, detStack;
 	int				  e_yarost;
+	int               explodeStacks; // >0: при накоплении >= (explodeStacks - FS_SK_EXPLODE_STACK_BONUS) стаков — взрыв
 	fs_skillArr_t     skills;
 	char              *title, *picture, *animData, *slotId;
 
 	fs_pers_t         *activator;
-};
+};ли
 
 struct fs_persCmb_s {
 	int               id;

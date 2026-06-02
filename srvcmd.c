@@ -766,14 +766,15 @@ fs_srvStatus_t fs_cmd_SCCT_ADD_EFFECT(fs_client_t *client, fs_packet_t *inPacket
 		PT_INT, //30
 		PT_INT, //31
 		PT_FIXED, //32
-		PT_INT //33
+		PT_INT, //33
+		PT_INT  //34
 	};
 	fs_param_t        *param;
 	fs_pers_t         *pers;
 	fs_persEff_t      *eff;
 	fs_skill_t        skill;
 
-	if (fs_cmdCheckParams(inPacket,paramTypes,33,true,true) != OK) {
+	if (fs_cmdCheckParams(inPacket,paramTypes,34,true,true) != OK) {
 		WARN("Invalid parameters");
 		return FS_SS_WRONG_ARGS;
 	}
@@ -815,7 +816,9 @@ fs_srvStatus_t fs_cmd_SCCT_ADD_EFFECT(fs_client_t *client, fs_packet_t *inPacket
 	eff->probAuto = PARAM_FIXED(PARAM_NEXT(inPacket)); //2012
 	
 	eff->cdType = PARAM_INT(PARAM_NEXT(inPacket));
+	eff->explodeStacks = PARAM_INT(PARAM_NEXT(inPacket));
 	v_push(pers->effVec,eff);
+
 	while ((param = PARAM_NEXT(inPacket))) {
 		if ((PARAM_TYPE(param) != PT_INT) && (PARAM_TYPE(param) != PT_NINT)) {
 			WARN("Wrong 'value' type: %d",PARAM_TYPE(param));
@@ -1785,6 +1788,7 @@ fs_srvStatus_t fs_cmd_SCCL_ATTACK(fs_client_t *client, fs_packet_t *inPacket, fs
 	
 	if ((pers->fight->status != FS_FS_RUNNING) || (pers->status != FS_PS_ACTIVE) || (pers->atime > (stime - 2))) return FS_SS_WRONG_STATE;	// personage can't attack
 	if ((part < 1) || (part > 6)) return FS_SS_WRONG_PART;
+	if (!pers->opponent) return FS_SS_WRONG_STATE;
 	if (!((1 << (part-1)) & pers->opponent->partMask)) return FS_SS_WRONG_PARTMASK;
 	fs_fightLockMutex(pers->fight);
 	fs_persAttack(pers,part,wpnEff);

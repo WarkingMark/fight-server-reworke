@@ -26,52 +26,152 @@ int pers_hp_percent(const fs_pers_t *p) { return (int)(pers_hp_ratio(p) * 100.0)
 static inline double fs___persAoeWeight(fs_pers_t *pers, fs_pers_t *target);
 /* === Hard Caps vector === */
 const int FS_SK_HARD_CAPS[FS_SK_MAXCODE + 1] = {
-	[FS_SK_AOECNT]        = 100,
-	[FS_SK_AOEDMG]        = 500,
-	[FS_SK_DMGX]          = 500,
+	/* Resistances */
+	[FS_SK_RSTPHYSIC]     = 100,
+	[FS_SK_RSTKIDMAG]     = 100,
+	[FS_SK_RSTAIRFIRE]    = 100,
+	[FS_SK_RSTWTRGRND]    = 100,
+	[FS_SK_RSTLGHSHAD]    = 100,
+	[FS_SK_RSTALL]        = 75,
+	[FS_SK_RSTPHYSICBLOCK]= 100,
+	[FS_SK_PCRSTAIRBLOCK] = 100,
+	[FS_SK_BLEED_RESIST]  = 100,
+	[FS_SK_POISON_RESIST] = 100,
+	/* Penetrations */
+	[FS_SK_FW_PENETR]     = 100,
+	[FS_SK_WE_PENETR]     = 100,
+	[FS_SK_LD_PENETR]     = 100,
+	[FS_SK_W_REPRESS]     = 100,
+	[FS_SK_PH_PCRESIST]   = 100,
+	[FS_SK_KM_PCRESIST]   = 100,
+	[FS_SK_FW_PCRESIST]   = 100,
+	[FS_SK_WE_PCRESIST]   = 100,
+	[FS_SK_LD_PCRESIST]   = 100,
+	[FS_SK_FW_PENETRATION]= 100,
+	[FS_SK_LD_PENETRATION]= 100,
+	[FS_SK_WE_PENETRATION]= 100,
+	[FS_SK_PENETRATION]   = 100,
+	[FS_SK_WILL]          = 100,
+	[FS_SK_WILL_REPRESSION]= 100,
+	/* Hit / Crit */
+	[FS_SK_MAGHIT]        = 100,
+	[FS_SK_MAGCRIT]       = 100,
+	[FS_SK_MAGCRITDEF]    = 100,
+	[FS_SK_MAGCRITDMX]    = 500,
+	[FS_SK_FIZCRITDEF]    = 100,
+	[FS_SK_FIZCRITDMX]    = 500,
+	[FS_SK_CRITAMP]       = 500,
 	[FS_SK_CRITDMX]       = 500,
-	[FS_SK_DMG_REDUCE_P]  = 90,
+	[FS_SK_CRIT_CHANCE]   = 100,
+	[FS_SK_CRIT_RESIST]   = 80,
+	[FS_SK_CRIT_DMG_IGNORE]= 80,
+	[FS_SK_CRIT_DMG_REDUCE]= 75,
+	[FS_SK_CRIT_CHANCE_PVP]= 80,
+	[FS_SK_CRITPENALTY]   = 100,
+	/* Charge skills */
+	[FS_SK_CHRGDMGX]      = 500,
+	[FS_SK_CHRGVAMP]      = 100,
+	[FS_SK_CHRGSTUNP]     = 100,
+	[FS_SK_CHRGSTUNT]     = 10,
+	[FS_SK_CHRGCRIT]      = 100,
+	[FS_SK_CHRGSTUNC]     = 7,
+	[FS_SK_CHVAMPMINUS]   = 100,
+	[FS_SK_CHVAMPPLUS]    = 100,
+	/* Aura charge */
+	[FS_SK_AURACHRGDMGX]  = 500,
+	[FS_SK_AURACHRGVAMP]  = 100,
+	[FS_SK_AURACHRGCRIT]  = 100,
+	/* Damage bonuses */
+	[FS_SK_DMGX]          = 500,
 	[FS_SK_DMGX_PVP]      = 500,
 	[FS_SK_DMGX_PVE]      = 500,
 	[FS_SK_DMGX_PVP_DEF]  = 90,
 	[FS_SK_DMGX_PVE_DEF]  = 90,
+	[FS_SK_DMGX_RECV]     = 500,
 	[FS_SK_ELEMENT_ATK]   = 500,
 	[FS_SK_ELEMENT_DEF]   = 500,
-	[FS_SK_LETHAL_RATE]   = 50,
-	[FS_SK_BLEED_RESIST]  = 100,
-	[FS_SK_POISON_RESIST] = 100,
-	[FS_SK_DEBUFF_DUR_P]  = 200,
-	[FS_SK_BUFF_DUR_P]    = 200,
-	[FS_SK_AOE_DMG_MULT]  = 500,
 	[FS_SK_ADD_MULT_DMG]  = 500,
+	[FS_SK_HEALONATTACK]  = 500,
+	/* Damage reduction */
+	[FS_SK_DMG_REDUCE_P]  = 90,
+	[FS_SK_DMG_REDUCE_FLAT]= 2000,
+	[FS_SK_BLOCK_DMG_P]   = 50,
+	[FS_SK_STOIKOST]      = 90,
+	[FS_SK_INJURYDEC]     = 90,
+	[FS_SK_RAZPELENY]     = 100,
+	/* Accuracy / Evade / Block */
+	[FS_SK_PHYS_ACCURACY] = 100,
+	[FS_SK_EVADEPENALTY]  = 100,
+	[FS_SK_BLOCKPENALTY]  = 100,
+	[FS_SK_BLOCK_CHANCE]  = 50,
+	[FS_SK_EVADE_CHANCE]  = 50,
+	[FS_SK_EVADE_CHANCE_IGNORE]= 80,
+	[FS_SK_BLOCK_CHANCE_IGNORE]= 80,
+	/* Vampirism */
+	[FS_SK_VAMPIR]        = 100,
+	/* Lethal / Execute */
+	[FS_SK_LETHAL_RATE]   = 50,
+	[FS_SK_EXECUTE_P]     = 200,
+	[FS_SK_CHANCE_IGNORE_DEF]= 50,
+	/* Deadly strike */
+	[FS_SK_DEADLY_STRIKE] = 100,
+	[FS_SK_DS_DMG]        = 200,
+	/* Multi-hit */
+	[FS_SK_MULTI_HIT_PERCENT_DAMAGE]= 100,
+	[FS_SK_MULTI_HIT_CHANCE]        = 100,
+	/* AOE */
+	[FS_SK_AOECNT]        = 100,
+	[FS_SK_AOEDMG]        = 500,
+	[FS_SK_AOE_DMG_MULT]  = 500,
+	[FS_SK_AOE_EFF_CHANCE]= 100,
+	[FS_SK_AOE_EFF_DUR_P] = 200,
+	[FS_SK_AOE_CRIT_MOD]  = 100,
+	[FS_SK_AOE_VAMP_MOD]  = 100,
+	/* DoT / Duration */
 	[FS_SK_DOT_DMG_MULT]  = 500,
 	[FS_SK_DOT_DURATION]  = 300,
-	[FS_SK_HP_REGEN_P]    = 50,
+	[FS_SK_DEBUFF_DUR_P]  = 200,
+	[FS_SK_BUFF_DUR_P]    = 200,
+	[FS_SK_BUFF_DUR_REDUCE]    = 100,
+	[FS_SK_DEBUFF_DUR_REDUCE]  = 100,
+	[FS_SK_DUAL_PENALTY]  = 100,
+	/* Healing */
 	[FS_SK_HEAL_RCVD_MULT]= 200,
 	[FS_SK_SELF_HEAL_MULT]= 100,
 	[FS_SK_HEAL_POWER]    = 200,
-	[FS_SK_REFLECTION_DMG_P]=100,
-	[FS_SK_MANA_SHIELD]   = 100,
-	[FS_SK_CRIT_RESIST]   = 80,
-	[FS_SK_EXECUTE_P]     = 200,
+	[FS_SK_HEALPENALTY]   = 100,
+	/* Regen */
+	[FS_SK_HP_REGEN_FLAT] = 500,
+	[FS_SK_MP_REGEN_FLAT] = 500,
+	[FS_SK_HP_REGEN_P]    = 50,
+	[FS_SK_MP_REGEN_P]    = 50,
+	[FS_SK_MANAREGPROB]   = 100,
 	[FS_SK_MP_COST_REDUCE]= 80,
 	[FS_SK_MP_COST_FLAT]  = 50,
-	[FS_SK_CHANCE_IGNORE_DEF]= 50,
-	[FS_SK_BLOOD_EXPLOSION] = 100,
-	[FS_SK_DEADLY_STRIKE]   = 100,
-	[FS_SK_DS_DMG]          = 200,
-	[FS_SK_CRIT_DMG_IGNORE] = 80,
-	[FS_SK_CRIT_DMG_REDUCE] = 75,
-	[FS_SK_CRIT_CHANCE_PVP] = 80,
-	[FS_SK_BLOCK_DMG_P] = 50,
-	[FS_SK_MULTI_HIT_PERCENT_DAMAGE] = 100,
-	[FS_SK_MULTI_HIT_CHANCE] = 100,
-	[FS_SK_CRIT_CHANCE] = 100,
-	[FS_SK_VAMPIR] = 100,
-	[FS_SK_EVADE_CHANCE_IGNORE] = 80,
-	[FS_SK_BLOCK_CHANCE_IGNORE] = 80,
-	[FS_SK_BUFF_DUR_REDUCE]     = 100,
-	[FS_SK_DEBUFF_DUR_REDUCE]   = 100,
+	/* Defensive specials */
+	[FS_SK_REFLECTION_DMG_P]= 100,
+	[FS_SK_MANA_SHIELD]   = 100,
+	[FS_SK_SHIP]          = 100,
+	[FS_SK_ANTISTUN]      = 100,
+	/* Bow */
+	[FS_SK_BOWDMG]        = 500,
+	/* HP/MP modifiers */
+	[FS_SK_HPMOD]         = 500,
+	[FS_SK_UNHPMOD]       = 500,
+	/* Initiative */
+	[FS_SK_INICIATIV]     = 100,
+	[FS_SK_INITIATIVE]    = 100,
+	/* Stack explosion */
+	[FS_SK_EXPLODE_CHANCE]     = 100,
+	[FS_SK_EXPLODE_STACK_BONUS]= 10,
+	[FS_SK_EXPLODE_DMG_P]      = 500,
+	[FS_SK_DEBUFF_POWER_P]     = 200,
+	[FS_SK_MAXHP_BONUS_P]     = 100,
+	[FS_SK_MAXMP_BONUS_P]     = 100,
+	[FS_SK_DMG_FROM_TARHP_P]  = 30,
+	[FS_SK_RAGE_DMG_P]        = 100,
+	[FS_SK_LOW_HP_DEF_P]      = 50,
+	[FS_SK_MANA_BURN_P]       = 30,
 };
 
 /* Функция применения лимита */
@@ -754,11 +854,24 @@ errno_t fs_persAttack(fs_pers_t *pers, int part, bool wpnEff) {
 	if (dmgx > 0) {
 		dmg += dmg * (dmgx / 100.0);
 	}
-	
-	
+
+	// DMG_FROM_TARHP_P: бонус урона = X% от макс HP цели
+	{
+		int dmgFromTarHp = fs_clamp_skill(FS_SK_DMG_FROM_TARHP_P, PERS_SKILL(pers, FS_SK_DMG_FROM_TARHP_P));
+		if (dmgFromTarHp > 0 && !fE && !fB)
+			dmg += PERS_HPMAX(opp) * (dmgFromTarHp / 100.0);
+	}
+	// RAGE_DMG_P: бонус урона когда своё HP < 30%
+	{
+		int rageDmgP = fs_clamp_skill(FS_SK_RAGE_DMG_P, PERS_SKILL(pers, FS_SK_RAGE_DMG_P));
+		if (rageDmgP > 0 && !fE && !fB && PERS_HPMAX(pers) > 0
+				&& PERS_HP(pers) < PERS_HPMAX(pers) * 0.3)
+			dmg += dmg * (rageDmgP / 100.0);
+	}
+
 	fs_persSetEvent(pers,FS_PE_ATTACK,"iiiiis",pers->id,opp->id,kick,part,rnd,animData);
 	fs_persSetEvent(opp,FS_PE_ATTACK,"iiiiis",pers->id,opp->id,kick,part,rnd,animData);
-	
+
 	ndmg = dmg;
 	dmg = fs_persDamage(opp,dmg,FS_PDT_PHYSICAL,false,pers);	// damage
 
@@ -788,6 +901,18 @@ errno_t fs_persAttack(fs_pers_t *pers, int part, bool wpnEff) {
 				if (!opp->killer) opp->killer = pers;
 				fs_persDie(opp, pers);        // ← сразу умирает, не ждём recalc
 			}
+		}
+	}
+
+	// MANA_BURN_P: X% от текущей маны цели как доп урон + сжигает ману
+	if (!fE && !fB && pers_is_alive(opp)) {
+		int manaBurnP = fs_clamp_skill(FS_SK_MANA_BURN_P, PERS_SKILL(pers, FS_SK_MANA_BURN_P));
+		if (manaBurnP > 0 && PERS_MP(opp) > 0) {
+			double burnDmg = PERS_MP(opp) * (manaBurnP / 100.0);
+			PERS_INTSKILL(opp, FS_SK_MP) -= (int)burnDmg;
+			PERS_EXTSKILL(opp, FS_SK_MP) -= (int)burnDmg;
+			if (PERS_MP(opp) < 0) { PERS_INTSKILL(opp, FS_SK_MP) = 0; PERS_EXTSKILL(opp, FS_SK_MP) = 0; }
+			fs_persDamage(opp, burnDmg, FS_PDT_PHYSICAL, false, pers);
 		}
 	}
 
@@ -929,7 +1054,7 @@ errno_t fs_persAttack(fs_pers_t *pers, int part, bool wpnEff) {
 					}
 
 					while ((p = v_each(pers->fight->persVec,&vi))) {
-						if ((p->teamNum == pers->teamNum) || p->id == pers->opponent->id) continue;
+						if ((p->teamNum == pers->teamNum) || p->id == opp->id) continue;
 						if ((p->status != FS_PS_FIGHTING) && (p->status != FS_PS_ACTIVE) && (p->status != FS_PS_PASSIVE)) continue;
 						if(i == (auraEff->aoeCnt - 1)) break;
 
@@ -1547,6 +1672,11 @@ double fs_persDamageEx(fs_pers_t *pers, double dmg, int dmgType, bool crit, fs_p
 				// DMG_REDUCE_P + DMGX_RECV
 				int dmgReduceP = fs_clamp_skill(FS_SK_DMG_REDUCE_P, PERS_SKILL(pers, FS_SK_DMG_REDUCE_P));
 				int dmgxRecv = fs_clamp_skill(FS_SK_DMGX_RECV, PERS_SKILL(pers, FS_SK_DMGX_RECV));
+				// LOW_HP_DEF_P: доп снижение урона когда своё HP < 30%
+				if (PERS_HPMAX(pers) > 0 && PERS_HP(pers) < PERS_HPMAX(pers) * 0.3) {
+					int lowHpDefP = fs_clamp_skill(FS_SK_LOW_HP_DEF_P, PERS_SKILL(pers, FS_SK_LOW_HP_DEF_P));
+					dmgReduceP = MIN(dmgReduceP + lowHpDefP, 90);
+				}
 				double totalPctMod = (dmgxRecv - dmgReduceP) / 100.0;
 				if (totalPctMod != 0.0) dmg += dmg * totalPctMod;
 
@@ -2216,7 +2346,7 @@ void fs___persActivateEffect(fs_pers_t *pers, fs_persEff_t *eff, fs_pers_t *targ
 
 	// BLOOD_EXPLOSION: check for bleed stack explosion
 	if (effCopy->dmgType & FS_PDT_PHYSICAL && effCopy->f1 < 0 && effCopy->actTime > 0) {
-		int bloodExplChance = fs_clamp_skill(FS_SK_BLOOD_EXPLOSION, PERS_SKILL(pers, FS_SK_BLOOD_EXPLOSION));
+		int bloodExplChance = fs_clamp_skill(FS_SK_EXPLODE_CHANCE, PERS_SKILL(pers, FS_SK_EXPLODE_CHANCE));
 		if (bloodExplChance > 0) {
 			int bleedStacks = 0;
 			viter_t vi;
@@ -2234,6 +2364,68 @@ void fs___persActivateEffect(fs_pers_t *pers, fs_persEff_t *eff, fs_pers_t *targ
 			}
 		}
 	}
+
+	// STACK EXPLOSION: общий механизм взрыва стаков
+	if (effCopy->explodeStacks > 0) {
+		int stackBonus  = fs_clamp_skill(FS_SK_EXPLODE_STACK_BONUS, PERS_SKILL(pers, FS_SK_EXPLODE_STACK_BONUS));
+		int threshold   = effCopy->explodeStacks + stackBonus; // больше стаков = сильнее взрыв
+		int stackCount  = 0;
+		double explodeVal = 0;
+		viter_t vi_ex;
+		fs_persEff_t *stk;
+
+		v_reset(target->effVec, &vi_ex);
+		while ((stk = v_current(target->effVec, &vi_ex))) {
+			if ((stk->flags & FS_PEF_ACTIVE) && stk->artId == effCopy->artId && stk->explodeStacks > 0) {
+				stackCount++;
+				if (stk->actPeriod > 0) {
+					int tl = MAX((stk->eetime - fs_stime + stk->actPeriod - 1) / stk->actPeriod, 0);
+					if (stk->dmgRecalc != 0)
+						explodeVal += stk->dmgRecalc * tl;
+					else if (stk->skills[FS_SK_HP] != 0)
+						explodeVal += -(double)stk->skills[FS_SK_HP] * tl;
+				}
+			}
+			v_next(target->effVec, &vi_ex);
+		}
+		// добавляем вклад нового стака
+		if (effCopy->actPeriod > 0 && effCopy->actTime > 0 && effCopy->skills[FS_SK_HP] != 0)
+			explodeVal += -(double)effCopy->skills[FS_SK_HP] * (effCopy->actTime / effCopy->actPeriod);
+
+		if (stackCount >= threshold) {
+			if (explodeVal != 0) {
+				int dmgP = fs_clamp_skill(FS_SK_EXPLODE_DMG_P, PERS_SKILL(pers, FS_SK_EXPLODE_DMG_P));
+				if (dmgP > 0 && explodeVal > 0)
+					explodeVal *= (1.0 + dmgP / 100.0);
+				int explDmgType = effCopy->dmgType ? effCopy->dmgType : FS_PDT_PHYSICAL;
+				fs_persDamage(target, explodeVal, explDmgType, true, pers);
+			}
+			// сбрасываем все стаки этого эффекта
+			v_reset(target->effVec, 0);
+			while ((stk = v_each(target->effVec, 0))) {
+				if ((stk->flags & FS_PEF_ACTIVE) && stk->artId == effCopy->artId && stk->explodeStacks > 0)
+					stk->flags |= FS_PEF_DROP;
+			}
+			fs_persEffDelete(effCopy);
+			fs_persRecalcEffects(target);
+			return;
+		}
+	}
+
+	// DEBUFF_POWER_P: усиление негативных скиллов при наложении на врага
+	if (pers != target && pers->teamNum != target->teamNum) {
+		int debuffPowerP = fs_clamp_skill(FS_SK_DEBUFF_POWER_P, PERS_SKILL(pers, FS_SK_DEBUFF_POWER_P));
+		if (debuffPowerP > 0) {
+			int _s;
+			double mult = 1.0 + debuffPowerP / 100.0;
+
+			for (_s = 0; _s <= FS_SK_MAXCODE; _s++) {
+				if (effCopy->skills[_s] < 0)
+					effCopy->skills[_s] = (int)(effCopy->skills[_s] * mult);
+			}
+		}
+	}
+
 
 	effCopy->flags |= FS_PEF_ACTIVE;
 	effCopy->activator = pers;
@@ -2341,6 +2533,7 @@ errno_t fs_persRecalcEffects(fs_pers_t *pers) {
 					eff->skills[FS_SK_XHPMAX] += eff->skills[FS_SK_HPMAX];
 					eff->skills[FS_SK_XMPMAX] += eff->skills[FS_SK_MPMAX];
 				}
+
 				// recalculating magic damage
 				if ((eff->dmg <= 0) && (eff->dmgType & ~OLD_DMGTYPE) && fStart && fPeriod && (eff->skills[FS_SK_HP] < 0) && eff->activator && (ticks > 0)) {
 					eff->dmgRecalc = fs_persRecalcDmg(eff->activator,pers,eff->dmgType,(-eff->skills[FS_SK_HP] * ticks),1,eff->aoeCnt) / ticks;
@@ -2554,6 +2747,14 @@ errno_t fs_persRecalcEffects(fs_pers_t *pers) {
 	// HPMAX can't be less than 0
 	PERS_INTSKILL(pers,FS_SK_HPMAX) = MAX(PERS_INTSKILL(pers,FS_SK_HPMAX), 0);
 	PERS_EXTSKILL(pers,FS_SK_HPMAX) = MAX(PERS_EXTSKILL(pers,FS_SK_HPMAX), 0);
+	// MAXHP_BONUS_P: % бонус к макс HP
+	{
+		int hpBonusP = fs_clamp_skill(FS_SK_MAXHP_BONUS_P, PERS_EXTSKILL(pers, FS_SK_MAXHP_BONUS_P));
+		if (hpBonusP > 0) {
+			PERS_INTSKILL(pers,FS_SK_HPMAX) += (int)(PERS_INTSKILL(pers,FS_SK_HPMAX) * hpBonusP / 100.0);
+			PERS_EXTSKILL(pers,FS_SK_HPMAX) += (int)(PERS_EXTSKILL(pers,FS_SK_HPMAX) * hpBonusP / 100.0);
+		}
+	}
 	// HP appropriate shift
 	PERS_INTSKILL(pers,FS_SK_HP) -= MAX(PERS_HP(pers) - PERS_HPMAX(pers), 0);
 	PERS_EXTSKILL(pers,FS_SK_HP) -= MAX(PERS_HP(pers) - PERS_HPMAX(pers), 0);
@@ -2563,6 +2764,14 @@ errno_t fs_persRecalcEffects(fs_pers_t *pers) {
 	// MPMAX can't be less than 0
 	PERS_INTSKILL(pers,FS_SK_MPMAX) = MAX(PERS_INTSKILL(pers,FS_SK_MPMAX), 0);
 	PERS_EXTSKILL(pers,FS_SK_MPMAX) = MAX(PERS_EXTSKILL(pers,FS_SK_MPMAX), 0);
+	// MAXMP_BONUS_P: % бонус к макс MP
+	{
+		int mpBonusP = fs_clamp_skill(FS_SK_MAXMP_BONUS_P, PERS_EXTSKILL(pers, FS_SK_MAXMP_BONUS_P));
+		if (mpBonusP > 0) {
+			PERS_INTSKILL(pers,FS_SK_MPMAX) += (int)(PERS_INTSKILL(pers,FS_SK_MPMAX) * mpBonusP / 100.0);
+			PERS_EXTSKILL(pers,FS_SK_MPMAX) += (int)(PERS_EXTSKILL(pers,FS_SK_MPMAX) * mpBonusP / 100.0);
+		}
+	}
 	// MP appropriate shift
 	PERS_INTSKILL(pers,FS_SK_MP) -= MAX(PERS_MP(pers) - PERS_MPMAX(pers), 0);
 	PERS_EXTSKILL(pers,FS_SK_MP) -= MAX(PERS_MP(pers) - PERS_MPMAX(pers), 0);
