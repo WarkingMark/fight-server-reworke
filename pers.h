@@ -261,7 +261,6 @@ enum fs_skill_e {
 	/* Debuff Enhancement */
 	FS_SK_DEBUFF_POWER_P      = 141, // % усиления всех негативных эффектов при наложении на врага
 	/* Max HP/MP bonus */
-
 	FS_SK_MAXHP_BONUS_P       = 142, // % бонус к максимальному HP персонажа
 	FS_SK_MAXMP_BONUS_P       = 143, // % бонус к максимальному MP персонажа
 	/* Damage from target's max HP */
@@ -271,8 +270,14 @@ enum fs_skill_e {
 	FS_SK_LOW_HP_DEF_P        = 146, // % снижение входящего урона когда своё HP < 30%
 	/* Mana burn */
 	FS_SK_MANA_BURN_P         = 147, // наносит X% от текущей маны цели как доп урон (и сжигает её)
+	/* Death saves */
+	FS_SK_DEATH_SAVES         = 148, // кол-во спасений от смерти (смертельный удар → HP=1, декремент)
+	/* Escalation */
+	FS_SK_ESCALATION_DMG_P    = 149, // % бонус к урону за каждый ход без получения урона
+	FS_SK_ESCALATION_MAX      = 150, // максимум ходов накопления эскалации (кап стаков)
+
 };
-#define FS_SK_MAXCODE   147
+#define FS_SK_MAXCODE   150
 
 enum fs_persPart_e {
 	FS_PPT_HD1   =  0,
@@ -443,7 +448,10 @@ struct fs_pers_s {
 
 	unsigned          _rs[_RSC_MAXCODE+1];
 	int               _dmgEventCnt, _dieEventCnt;
-	double            multiHitScale; // >0: this attack is a multi-hit scaled by this factor
+	double            multiHitScale;    // >0: this attack is a multi-hit scaled by this factor
+	int               escalationTurns;  // ходов подряд без получения урона (для ESCALATION_DMG_P)
+	int               deathSavedThisHit; // флаг: death save сработал в текущем ударе (для kick=6)
+	int               deathSavesUsed;    // счётчик израсходованных спасений от смерти в бою
 };
 
 struct fs_persEff_s {

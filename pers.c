@@ -158,6 +158,7 @@ const int FS_SK_HARD_CAPS[FS_SK_MAXCODE + 1] = {
 	/* HP/MP modifiers */
 	[FS_SK_HPMOD]         = 500,
 	[FS_SK_UNHPMOD]       = 500,
+
 	/* Initiative */
 	[FS_SK_INICIATIV]     = 100,
 	[FS_SK_INITIATIVE]    = 100,
@@ -172,6 +173,9 @@ const int FS_SK_HARD_CAPS[FS_SK_MAXCODE + 1] = {
 	[FS_SK_RAGE_DMG_P]        = 100,
 	[FS_SK_LOW_HP_DEF_P]      = 50,
 	[FS_SK_MANA_BURN_P]       = 30,
+	[FS_SK_DEATH_SAVES]       = 5,
+	[FS_SK_ESCALATION_DMG_P]  = 50,
+	[FS_SK_ESCALATION_MAX]    = 10,
 };
 
 /* Функция применения лимита */
@@ -760,6 +764,21 @@ errno_t fs_persAttack(fs_pers_t *pers, int part, bool wpnEff) {
 	dmg = MAX(dmg,1);
 	} */
 	
+	// ESCALATION_DMG_P: бонус урона за каждый ход без получения урона
+	if (!fE && !fB) {
+		int escalDmgP = fs_clamp_skill(FS_SK_ESCALATION_DMG_P, PERS_SKILL(pers, FS_SK_ESCALATION_DMG_P));
+		if (escalDmgP > 0 && pers->escalationTurns > 0) {
+			int escalMax = fs_clamp_skill(FS_SK_ESCALATION_MAX, PERS_SKILL(pers, FS_SK_ESCALATION_MAX));
+			int activeTurns = (escalMax > 0) ? MIN(pers->escalationTurns, escalMax) : pers->escalationTurns;
+			double escalBonus = activeTurns * escalDmgP / 100.0;
+			dmg  += dmg  * escalBonus;
+			dmgA += dmgA * escalBonus;
+			dmg  = MAX(dmg,  1);
+			dmgA = MAX(dmgA, 1);
+		}
+	}
+	pers->escalationTurns++;
+
 	saveDMG = dmg; //Сохраним для аур
 	/*end calc dmg*/
 	DEBUG("[%d (%d) ===>>> %d (%d)], part=%d, wpnEff=%d",pers->id,PERS_LEVEL(pers),opp->id,PERS_LEVEL(opp),part,wpnEff);
@@ -871,11 +890,17 @@ errno_t fs_persAttack(fs_pers_t *pers, int part, bool wpnEff) {
 			dmg += dmg * (rageDmgP / 100.0);
 	}
 
-	fs_persSetEvent(pers,FS_PE_ATTACK,"iiiiis",pers->id,opp->id,kick,part,rnd,animData);
-	fs_persSetEvent(opp,FS_PE_ATTACK,"iiiiis",pers->id,opp->id,kick,part,rnd,animData);
-
 	ndmg = dmg;
 	dmg = fs_persDamage(opp,dmg,FS_PDT_PHYSICAL,false,pers);	// damage
+
+	// DEATH_SAVES: если death save сработал — переопределяем kick до отправки события
+	if (opp->deathSavedThisHit) {
+		kick = KICK_DEATH_SAVED;
+		opp->deathSavedThisHit = 0;
+	}
+
+	fs_persSetEvent(pers,FS_PE_ATTACK,"iiiiis",pers->id,opp->id,kick,part,rnd,animData);
+	fs_persSetEvent(opp,FS_PE_ATTACK,"iiiiis",pers->id,opp->id,kick,part,rnd,animData);
 
 	// LETHAL_RATE: шанс мгновенного убийства (только PVE / Монстры)
 	// if (dmg > 0 && pers_is_alive(opp) && pers_is_bot(opp)) {
@@ -1758,6 +1783,20 @@ double fs_persDamageEx(fs_pers_t *pers, double dmg, int dmgType, bool crit, fs_p
 		}
 
 		dmg = MIN(PERS_HP(pers),dmg);
+
+		// DEATH_SAVES: смертельный удар → выживаем с 1 HP, декремент счётчика
+		if (dmg > 0 && PERS_HP(pers) > 0 && (int)dmg >= PERS_HP(pers)) {
+			int deathSaves = (int)PERS_SKILL(pers, FS_SK_DEATH_SAVES);
+			if (deathSaves > 0) {
+				dmg = PERS_HP(pers) - 1;
+				PERS_INTSKILL(pers, FS_SK_DEATH_SAVES) = deathSaves - 1;
+				PERS_EXTSKILL(pers, FS_SK_DEATH_SAVES) = deathSaves - 1;
+				pers->deathSavedThisHit = 1;
+			}
+		}
+		// ESCALATION: сбросить счётчик при получении урона
+		if (dmg > 0) pers->escalationTurns = 0;
+
 		// REFLECTION_DMG_P (depth-limited to prevent stack overflow from mutual reflect chains)
 		{
 			static __thread int _reflectDepth = 0;

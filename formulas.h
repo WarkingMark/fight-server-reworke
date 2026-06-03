@@ -65,15 +65,14 @@
 #define DEX_BLOCK_CAP   0.15    // cap блока от ENDUR (при новом лимите)
 #define EVADE_FLAT_CAP  0.80    // max с учётом плоских бонусов (арт)
 #define EVADE_FLAT_CAP_NOART 0.30  // max без шмота
-
 // kick codes (для FS_PE_ATTACK события):
-// 1 = evade, 2 = crit, 3 = normal hit, 4 = block, 5 = deadly strike
+// 1 = evade, 2 = crit, 3 = normal hit, 4 = block, 5 = deadly strike, 6 = death saved
 #define KICK_EVADE          1
 #define KICK_CRIT           2
 #define KICK_NORMAL         3
 #define KICK_BLOCK          4
 #define KICK_DEADLY_STRIKE  5
-
+// #define KICK_DEATH_SAVED    6
 // =============================================================================
 // Каппинг вероятностей
 // =============================================================================
