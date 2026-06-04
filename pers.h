@@ -275,7 +275,6 @@ enum fs_skill_e {
 	/* Escalation */
 	FS_SK_ESCALATION_DMG_P    = 149, // % бонус к урону за каждый ход без получения урона
 	FS_SK_ESCALATION_MAX      = 150, // максимум ходов накопления эскалации (кап стаков)
-
 };
 #define FS_SK_MAXCODE   150
 

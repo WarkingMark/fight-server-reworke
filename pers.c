@@ -1,4 +1,4 @@
-/* 
+/*
  * modifed: igorpauk 2017-18
  */
 
@@ -158,7 +158,6 @@ const int FS_SK_HARD_CAPS[FS_SK_MAXCODE + 1] = {
 	/* HP/MP modifiers */
 	[FS_SK_HPMOD]         = 500,
 	[FS_SK_UNHPMOD]       = 500,
-
 	/* Initiative */
 	[FS_SK_INICIATIV]     = 100,
 	[FS_SK_INITIATIVE]    = 100,
@@ -366,12 +365,13 @@ fs_persEff_t *fs_persEffCopy(fs_persEff_t *eff) {
 // #0  cmd          (type INT, val=FS_SC_NONE)
 // #1  event        (type INT/NINT, val IN fs_persEvent_t)
 // #n  ...
+
 errno_t fs_persSetEvent(fs_pers_t *pers, fs_persEvent_t event, char *fmt, ...) {
 	va_list      ap;
 	va_list      ap2;
 	fs_packet_t  *packet;
 	fs_param_t   *param;
-	
+
 	fs_followPers_t   	*followPersData;
 
 	if (!pers || !event) {
@@ -384,11 +384,11 @@ errno_t fs_persSetEvent(fs_pers_t *pers, fs_persEvent_t event, char *fmt, ...) {
 		if (pers->_dmgEventCnt > 10) return OK;
 		pers->_dmgEventCnt++;
 	}
-	
+
 	if(pers->fight->status != FS_FS_RUNNING && event == FS_PE_FIGHTSTATE){
 		return OK;
 	}
-	
+
 	va_start(ap,fmt);
 	packet = fs_packetCreate();
 	PARAM_NEW(param);
@@ -399,11 +399,11 @@ errno_t fs_persSetEvent(fs_pers_t *pers, fs_persEvent_t event, char *fmt, ...) {
 	PARAM_PUSH(packet,param);
 	if (fmt) fs_addParamsVA(&(packet->params),fmt,ap);
 	v_push(pers->client->outPacketVec,packet);
-	
+
 	DEBUG("EVENT: ==> sock: %d, persId=%d, event=%d",pers->client->sock,pers->id,event);
 	fs_debugParams(&(packet->params),"EVENT: OUT",true);
 	va_end(ap);
-	
+
 	bool equal = false;
 	switch(event){
 		case FS_PE_OPPNEW:
@@ -413,15 +413,15 @@ errno_t fs_persSetEvent(fs_pers_t *pers, fs_persEvent_t event, char *fmt, ...) {
 			equal = true;
 			break;
 	}
-	
+
 	if(!equal) return OK;
-	
+
 	viter_t      vi;
-	
+
 	if(pers->followPers->size <= 0){
 		return OK;
 	}
-	
+
 	switch(event){
 		case FS_PE_OPPNEW:
 		//case FS_PE_EFFECTUSE:
@@ -448,9 +448,9 @@ errno_t fs_persSetEvent(fs_pers_t *pers, fs_persEvent_t event, char *fmt, ...) {
 				if(followPersData->pers){
 					if(!followPersData->pers->client) continue;
 					//if(followPersData->pers->client->flags & FS_CF_DISCONN) continue; //DISCONNECT POSHLI DALEE
-					
+
 					//DEBUGXXX("EVENT_FOLLOWER %d: ==> %d",pers->id,followPersData->pers->id);
-					
+
 					if (!followPersData->pers || !event) {
 						continue;
 					}
@@ -471,7 +471,7 @@ errno_t fs_persSetEvent(fs_pers_t *pers, fs_persEvent_t event, char *fmt, ...) {
 					PARAM_PUSH(packet,param);
 					if (fmt) fs_addParamsVA(&(packet->params),fmt,ap2);
 					v_push(followPersData->pers->client->outPacketVec,packet);
-					
+
 					//DEBUGXXX("EVENTSENDPACKFOLLOW: ==> sock: %d, persId=%d, event=%d",followPersData->pers->client->sock,followPersData->pers->id,event);
 					fs_debugParams(&(packet->params),"EVENT: OUT",true);
 					va_end(ap2);
@@ -481,7 +481,7 @@ errno_t fs_persSetEvent(fs_pers_t *pers, fs_persEvent_t event, char *fmt, ...) {
 			}
 			break;
 	}
-	
+
 	return OK;
 }
 
@@ -526,21 +526,21 @@ errno_t fs_persAttack(fs_pers_t *pers, int part, bool wpnEff) {
 	int               cxMagDefInt = 0, cxMagDmgInt = 0;
 	double            cxMagDef = 0, cxMagDmg = 0, cxMagAdd = 0;
 
-	
+
 	//DEBUGXXX("BOTATTACK1");
-	
+
 	if (!pers || (part < 1) || (part > 6)) {
 		WARN("Invalid arguments");
 		return ERR_WRONG_ARGS;
 	}
-	
+
 	//DEBUGXXX("BOTATTACK2");
-	
+
 	opp = pers->opponent;
 	if (!opp || (pers->status != FS_PS_ACTIVE)) return ERR_WRONG_STATE;
-	
+
 	//DEBUGXXX("BOTATTACK3");
-	
+
 	if (wpnEff) {	// looking for a weapon effect available
 		v_reset(pers->effVec,0);
 		while ((eff = v_each(pers->effVec,0))) {
@@ -643,7 +643,7 @@ errno_t fs_persAttack(fs_pers_t *pers, int part, bool wpnEff) {
 		if (pE < pB) fE = false;
 		else fB = false;
 	}
-	
+
 	dmg = 0;
 	dmgA = 0;
 
@@ -662,7 +662,7 @@ errno_t fs_persAttack(fs_pers_t *pers, int part, bool wpnEff) {
 		cmb->useCnt++;
 		pers->cmbSize = 0;
 	}
-	
+
 	fs_persGetCharge(pers,FS_PDT_PHYSICAL,&charge, true);
 	/*calc dmg*/
 	if (!fE && !fB) {
@@ -718,20 +718,20 @@ errno_t fs_persAttack(fs_pers_t *pers, int part, bool wpnEff) {
 				}
 			}
 		}
-		dmg *= 1-Ap; 
+		dmg *= 1-Ap;
 		dmg += dmg * charge.dmgX;	// dmgX charge
 
 		if (pers->flags & FS_PF_DEFENDED) dmg *= _dmgDx;
 		if (opp->flags & FS_PF_DEFENDED) dmg *= _dmgDx;
 
 		dmg = MAX(dmg,1);
-		
-		dmgA *= 1-Ap; 
+
+		dmgA *= 1-Ap;
 		dmgA += dmgA * charge.dmgX;	// dmgX charge
 		if (pers->flags & FS_PF_DEFENDED) dmgA *= _dmgDx;
 		if (opp->flags & FS_PF_DEFENDED) dmgA *= _dmgDx;
 		dmgA = MAX(dmgA,1);
-		
+
 	}
 
 	/* if (!fE && !fB) {
@@ -763,21 +763,6 @@ errno_t fs_persAttack(fs_pers_t *pers, int part, bool wpnEff) {
 	if (opp->flags & FS_PF_DEFENDED) dmg *= _dmgDx - dmgDxPlus;
 	dmg = MAX(dmg,1);
 	} */
-	
-	// ESCALATION_DMG_P: бонус урона за каждый ход без получения урона
-	if (!fE && !fB) {
-		int escalDmgP = fs_clamp_skill(FS_SK_ESCALATION_DMG_P, PERS_SKILL(pers, FS_SK_ESCALATION_DMG_P));
-		if (escalDmgP > 0 && pers->escalationTurns > 0) {
-			int escalMax = fs_clamp_skill(FS_SK_ESCALATION_MAX, PERS_SKILL(pers, FS_SK_ESCALATION_MAX));
-			int activeTurns = (escalMax > 0) ? MIN(pers->escalationTurns, escalMax) : pers->escalationTurns;
-			double escalBonus = activeTurns * escalDmgP / 100.0;
-			dmg  += dmg  * escalBonus;
-			dmgA += dmgA * escalBonus;
-			dmg  = MAX(dmg,  1);
-			dmgA = MAX(dmgA, 1);
-		}
-	}
-	pers->escalationTurns++;
 
 	saveDMG = dmg; //Сохраним для аур
 	/*end calc dmg*/
@@ -789,10 +774,10 @@ errno_t fs_persAttack(fs_pers_t *pers, int part, bool wpnEff) {
 	kick = fE ? KICK_EVADE : (fC && isDeadlyStrike) ? KICK_DEADLY_STRIKE : fC ? KICK_CRIT : !fB ? KICK_NORMAL : KICK_BLOCK;
 
 	rnd = randInt(0,0xFFFF,NULL);
-	
+
 	//VSE SYDA
 	int stoikost = PERS_SKILL(opp, FS_SK_STOIKOST);
-	
+
 	if(opp->flags & FS_PF_BOT && opp->botTypeId > 0 && PERS_BOTDMGSKILL(pers, opp->botTypeId) > 0) {
 		dmg += MAX(0, (dmg * PERS_BOTDMGSKILL(pers, opp->botTypeId)) / 100);
 	}
@@ -890,17 +875,26 @@ errno_t fs_persAttack(fs_pers_t *pers, int part, bool wpnEff) {
 			dmg += dmg * (rageDmgP / 100.0);
 	}
 
-	ndmg = dmg;
-	dmg = fs_persDamage(opp,dmg,FS_PDT_PHYSICAL,false,pers);	// damage
-
-	// DEATH_SAVES: если death save сработал — переопределяем kick до отправки события
-	if (opp->deathSavedThisHit) {
-		kick = KICK_DEATH_SAVED;
-		opp->deathSavedThisHit = 0;
-	}
-
 	fs_persSetEvent(pers,FS_PE_ATTACK,"iiiiis",pers->id,opp->id,kick,part,rnd,animData);
 	fs_persSetEvent(opp,FS_PE_ATTACK,"iiiiis",pers->id,opp->id,kick,part,rnd,animData);
+
+	// ESCALATION_DMG_P: бонус урона за каждый ход без получения урона
+	if (!fE && !fB) {
+		int escalDmgP = fs_clamp_skill(FS_SK_ESCALATION_DMG_P, PERS_SKILL(pers, FS_SK_ESCALATION_DMG_P));
+		if (escalDmgP > 0 && pers->escalationTurns > 0) {
+			int escalMax = fs_clamp_skill(FS_SK_ESCALATION_MAX, PERS_SKILL(pers, FS_SK_ESCALATION_MAX));
+			int activeTurns = (escalMax > 0) ? MIN(pers->escalationTurns, escalMax) : pers->escalationTurns;
+			double escalBonus = activeTurns * escalDmgP / 100.0;
+			dmg  += dmg  * escalBonus;
+			dmgA += dmgA * escalBonus;
+			dmg  = MAX(dmg,  1);
+			dmgA = MAX(dmgA, 1);
+		}
+	}
+	pers->escalationTurns++;
+
+	ndmg = dmg;
+	dmg = fs_persDamage(opp,dmg,FS_PDT_PHYSICAL,false,pers);	// damage
 
 	// LETHAL_RATE: шанс мгновенного убийства (только PVE / Монстры)
 	// if (dmg > 0 && pers_is_alive(opp) && pers_is_bot(opp)) {
@@ -1017,7 +1011,7 @@ errno_t fs_persAttack(fs_pers_t *pers, int part, bool wpnEff) {
 		}
 	}
 	//DEBUGXXX("DAMAGE (persId: %d, status: %.2f)",pers->id,dmg);
-	
+
 	if(charge.vamp > 0) { //Восставовление от вампирика
 		_chargeVampInt = PERS_SKILL(pers,FS_SK_CHVAMPPLUS);
 		if(_chargeVampInt > 0) _chargeVamp = _chargeVampInt / 100.0;
@@ -1030,11 +1024,11 @@ errno_t fs_persAttack(fs_pers_t *pers, int part, bool wpnEff) {
 	if(pers->id == 1){
 		//DEBUGXXX("VAMPA (skill: %d, charge.vamp: %.2f, _chargeVampInt: %d, _chargeVamp: %.2f)",PERS_SKILL(pers,FS_SK_CHVAMPPLUS),charge.vamp,_chargeVampInt,_chargeVamp);
 	}
-	
+
 	fs_persDamage(pers,-dmg*(charge.vamp + _chargeVamp),kick,false,NULL);	// vampiric standart
-		
+
 	fs_fightSaveLog(pers,FS_FLC_KICK,kick,part,dmg,NULL,false);
-	
+
 	//CHECK_USR_AURA_EFF
 
 	v_reset(pers->effVec,0);
@@ -1050,18 +1044,18 @@ errno_t fs_persAttack(fs_pers_t *pers, int part, bool wpnEff) {
 			}
 			if ((auraEff->e_yarost > 0) && (PERS_MP(pers) > auraEff->e_yarost)) {
 				fs_persConsumeManna(pers,auraEff->e_yarost,false);
-				
+
 				dmgAura = fs_persRecalcDmgAura(pers, opp, auraEff);
-				
+
 				if (pers->flags & FS_PF_DEFENDED) dmgAura *= _dmgDx;
 				if (opp->flags & FS_PF_DEFENDED) {
 					dmgAura *= _dmgDx;
 				}
-				
+
 				dmgAura += dmgAura * charge.aura_dmgX;	// dmgX
-	
+
 				DEBUG("dmg=%.2f, dmgAura=%.2f, aoeCnt=%d", ndmg, dmgAura, auraEff->aoeCnt);
-				
+
 				if((auraEff->aoeCnt - 1) > 0){
 					//Нужно бить сразу нескольких..
 					i=0;
@@ -1087,15 +1081,15 @@ errno_t fs_persAttack(fs_pers_t *pers, int part, bool wpnEff) {
 
 
 						dmgAuraAoe = fs_persDamage(p,dmgAuraAoe,auraEff->dmgType,randRoll(charge.aura_critProb,NULL),pers);	// пелена
-						
+
 						fs_persSetEvent(pers,FS_PE_FIGHTLOG,"iiiiiiis",fs_stime,pers->id,p->id,FS_FLC_EFFECTUSE,0,(int)dmgAuraAoe,0,"");
 						fs_persSetEvent(p,FS_PE_FIGHTLOG,"iiiiiiis",fs_stime,pers->id,p->id,FS_FLC_EFFECTUSE,0,(int)dmgAuraAoe,0,"");
-						
+
 						i++;
 					}
 				}
 				fs_persDamage(pers,-dmgAura*charge.aura_vamp,kick,false,NULL);	// vampiric aura
-	
+
 				dmgAura = fs_persDamage(opp,dmgAura,auraEff->dmgType,randRoll(charge.aura_critProb,NULL),pers);	// пелена
 				fs_fightSaveLog(pers,FS_FLC_EFFECTUSE,kick,dmgAura,0,NULL,false);
 			}
@@ -1104,12 +1098,12 @@ errno_t fs_persAttack(fs_pers_t *pers, int part, bool wpnEff) {
 			}
 		}while(0);
 	}
-	
+
 	if(opp->stunCnt > 0) opp->stunCnt--;
 	if(opp->stunSafeCnt > 0) opp->stunSafeCnt--;
 	fs_persRecalcEffects(pers);
 	fs_persRecalcEffects(opp);
-	
+
 	int shipi = PERS_SKILL(opp,FS_SK_SHIP); // shipiept xD u protivnika
 	if(shipi > 100) shipi = 100; // chtobi ne ebatsa s etim potom
 	if(shipi){
@@ -1161,7 +1155,7 @@ errno_t fs_persAttack(fs_pers_t *pers, int part, bool wpnEff) {
 
 		fs_persRecalcEffects(pers);
 	}
-	
+
 	if (!fE && randRoll(charge.stunProb,NULL) && !(pers->flags & FS_PF_STUNNED) && !(opp->flags & FS_PF_STUNNED) && opp->stunSafeCnt <= 0 && opp->status != FS_PS_DEAD) {	// stunning the opponent if no evade
 		fs_persStun(pers,opp,charge.stunTime,charge.stunCnt);
 	}
@@ -1173,9 +1167,9 @@ errno_t fs_persAttack(fs_pers_t *pers, int part, bool wpnEff) {
 	if(fs_persGetTurn(opp) == OK) {
 		fs_persAddYarost(pers, 3);
 	}
-	
+
 	pers->userUdarCnt++;
-	
+
 	/*int time_current = time(NULL); //Начисление ярости по времени
 	int yarost_time = pers->yarost_time;
 	if(!yarost_time || yarost_time == 0 || yarost_time == NULL){
@@ -1201,7 +1195,7 @@ errno_t fs_persAddYarost(fs_pers_t *pers, int cnt) {
 		return ERR_WRONG_ARGS;
 	}
 	if (pers->status == FS_PS_DEAD) return ERR_WRONG_STATE;
-	
+
 	if(pers->yarost < pers->yarost_max){
 		if(pers->yarost >= pers->yarost_max){
 			y_add = pers->yarost_max - (pers->yarost - cnt);
@@ -1242,18 +1236,18 @@ errno_t fs_persStun(fs_pers_t *pers, fs_pers_t *opp, int stunTime, int stunCnt) 
 	fs_persEffDelete(eff);
 	if(pers->opponent) fs_persGetTurn(pers->opponent);
 	return OK;
-}	
+}
 
 errno_t fs_persGetTurn(fs_pers_t *pers) {
 	fs_pers_t    *opp;
-	
+
 	if (!pers) {
 		WARN("Invalid arguments");
 		return ERR_WRONG_ARGS;
 	}
-	
+
 	opp = pers->opponent;
-	
+
 	if ((pers->status == FS_PS_ACTIVE) || (pers->status == FS_PS_DEAD) || !opp || (opp->status == FS_PS_DEAD)) return ERR_WRONG_STATE;
 	if (pers->flags & FS_PF_STUNNED) opp->flags &= ~FS_PF_GETTURN;	// keep the chance to attack while stunned
 	if ((pers->flags & FS_PF_GETTURN) && (opp->flags & FS_PF_GETTURN)) {
@@ -1266,7 +1260,7 @@ errno_t fs_persGetTurn(fs_pers_t *pers) {
 	pers->flags |= FS_PF_GETTURN;
 	pers->status = FS_PS_ACTIVE;
 	opp->status = FS_PS_PASSIVE;
-	
+
 	/*fs_fightPersStatus(pers);
 	if(opp){
 		fs_fightPersStatus(opp);
@@ -1303,7 +1297,7 @@ errno_t fs_persDie(fs_pers_t *pers, fs_pers_t *killer) {
 	if (killer) {
 		killer->killCnt++;
 		if ((pers->kind != killer->kind) && pers_is_player(pers) && ((killer->level - pers->level) < 3)) killer->enemyKillCnt++;
-	}	
+	}
 	pers->status = FS_PS_DEAD;
 	pers->flags &= ~(FS_PF_GETTURN | FS_PF_TIMEOUTKILL | FS_PF_LIFELESS);
 	pers->opponent = NULL;
@@ -1313,7 +1307,7 @@ errno_t fs_persDie(fs_pers_t *pers, fs_pers_t *killer) {
 	//fs_fightLockMutex(pers->fight); //lock_have!!!
 	fs_fightDeadCnt(pers->fight, pers->teamNum, 1);
 	//fs_fightUnlockMutex(pers->fight); //unlock_have!!!
-	
+
 	return OK;
 }
 
@@ -1321,18 +1315,18 @@ errno_t fs_persPersIntelligence(fs_pers_t *pers) {
 	fs_fight_t   *fight;
 	lua_State    *L;
 	int          stime = fs_stime;
-	
+
 	//pettime сделать)))
-	
+
 	if (!pers) {
 		WARN("Invalid arguments");
 		return ERR_WRONG_ARGS;
 	}
-	
+
 	if(!pers->ctrlFunc) return OK;
-	
+
 	//if(!pers->petLevel) return OK;
-	
+
 	//if (pers->status == FS_PS_CREATED) pers->status = FS_PS_PENDING;	// going online
 	//if (pers->botActionTime > stime) return OK;
 	//pers->botActionTime = stime + randInt(2,3,NULL);
@@ -1348,7 +1342,7 @@ errno_t fs_persPersIntelligence(fs_pers_t *pers) {
 		WARN("No control function given (fightId: %d, persId: %d)",fight->id,pers->id);
 		return ERR_INIT;
 	}
-	
+
 	int time_current = fs_stime;
 	int pet_time = 0;
 	if(!pers->petRest || pers->petRest == 0){
@@ -1365,7 +1359,7 @@ errno_t fs_persPersIntelligence(fs_pers_t *pers) {
 		}
 		//DEBUGXXX("PET REST #3 (time_current: %d, pers pettime: %d)",time_current,pers->pettime);
 		pers->pettime = fs_stime;
-		
+
 		pet_time = randInt(PET_PERIOD_TIME_MIN, PET_PERIOD_TIME_MAX, NULL);
 		if(pers->petReady){ pet_time = randInt(PET_TIME_MIN, PET_TIME_MAX, NULL); }
 		pers->petRest = pet_time;
@@ -1374,19 +1368,19 @@ errno_t fs_persPersIntelligence(fs_pers_t *pers) {
 		//DEBUGXXX("PET REST #5 (time_current: %d, pers pettime: %d)",time_current,pers->pettime);
 		return OK;
 	}
-	
+
 	pers->userUdarCnt = 0;
 	//DEBUGXXX("BUFF SUKA!!!");
-	
+
 	pthread_mutex_lock(&(fight->mutex_lua));
-	if (lua_gettop(L) > 0) { 
+	if (lua_gettop(L) > 0) {
 		//DEBUGXXX("Lua stack not empty");	// [DEBUG]
 	}
 	lua_settop(L,0);
 
 	//PARAMS LUA INIT
 	fs_fightLuaInitParams(fight);
-	
+
 	// updating registry
 	luaif_pushptr(L,fight,"fs_fight_t");
 	lua_setfield(L,LUA_REGISTRYINDEX,"fight");
@@ -1408,7 +1402,7 @@ errno_t fs_persPersIntelligence(fs_pers_t *pers) {
 	LUAIF_TABLE_ADDFIELD(L,"status",pers->status,integer);
 	LUAIF_TABLE_ADDFIELD(L,"teamNum",pers->teamNum,integer);
 	lua_setglobal(L,"my");
-	
+
 	// running control function
 	lua_getglobal(L,pers->ctrlFunc);
 	if (!lua_isfunction(L,-1)) {
@@ -1483,16 +1477,16 @@ errno_t fs_persBotIntelligence(fs_pers_t *pers) {
 	// Lua вызов (строки 1185–... остаются без изменений)
 	fight = pers->fight;
 	L = fight->L;
-	
+
 	if (!pers->ctrlFunc) {
 		WARN("No control function given (fightId: %d, persId: %d)",fight->id,pers->id);
 		return ERR_INIT;
 	}
-	
+
 	pthread_mutex_lock(&(fight->mutex_lua));
 	if (lua_gettop(L) > 0) WARN("Lua stack not empty");	// [DEBUG]
 	lua_settop(L,0);
-	
+
 	//PARAMS LUA INIT
 	DEBUG("PARAMS_LUA_INIT");
 	fs_fightLuaInitParams(fight);
@@ -1516,7 +1510,7 @@ errno_t fs_persBotIntelligence(fs_pers_t *pers) {
 	LUAIF_TABLE_ADDFIELD(L,"status",pers->status,integer);
 	LUAIF_TABLE_ADDFIELD(L,"teamNum",pers->teamNum,integer);
 	lua_setglobal(L,"my");
-	
+
 	// running control function
 	lua_getglobal(L,pers->ctrlFunc);
 	if (!lua_isfunction(L,-1)) {
@@ -1538,7 +1532,7 @@ double fs_persGetCost(fs_pers_t *pers) {
 		WARN("Invalid arguments");
 		return ERR_WRONG_ARGS;
 	}
-	cost = 
+	cost =
 		PERS_SKILL(pers,FS_SK_STR) +
 		PERS_SKILL(pers,FS_SK_INT) +
 		PERS_SKILL(pers,FS_SK_DEX) +
@@ -1560,21 +1554,21 @@ double fs_persGetCost2(fs_pers_t *pers) {
 		return ERR_WRONG_ARGS;
 	}
 	if (PERS_LEVEL(pers) >= 11) { // ��� �����
-		cost = 
+		cost =
 			PERS_SKILL(pers,FS_SK_INT) +
 			PERS_SKILL(pers,FS_SK_DEX) +
 			PERS_SKILL(pers,FS_SK_ENDUR)
 		;
 		cost = cost * 2;
 	} else {
-		cost = 
+		cost =
 			PERS_SKILL(pers,FS_SK_STR) +
 			PERS_SKILL(pers,FS_SK_INT) +
 			PERS_SKILL(pers,FS_SK_DEX) +
 			PERS_SKILL(pers,FS_SK_ENDUR) +
 			PERS_SKILL(pers,FS_SK_VIT) +
 			(PERS_SKILL(pers,FS_SK_PWRMIN)*0.1 + PERS_SKILL(pers,FS_SK_PWRMAX)*0.1)/(2*_Xs) +
-			PERS_SKILL(pers,FS_SK_XHPMAX)/_Vs 
+			PERS_SKILL(pers,FS_SK_XHPMAX)/_Vs
 			- (_COMP(PERS_LEVEL(pers),_X0) + _COMP(PERS_LEVEL(pers),_V0))*_IComp
 		;
 	}
@@ -1782,16 +1776,16 @@ double fs_persDamageEx(fs_pers_t *pers, double dmg, int dmgType, bool crit, fs_p
 			dmg -= mpDmg;
 		}
 
+		double dmgPreCap = dmg;
 		dmg = MIN(PERS_HP(pers),dmg);
 
-		// DEATH_SAVES: смертельный удар → выживаем с 1 HP, декремент счётчика
+		// DEATH_SAVES: смертельный удар → выживаем с 1 HP
+		// deathSavesUsed — счётчик в RAM сервера, не затрагивается PHP-синком/recalcEffects
 		if (dmg > 0 && PERS_HP(pers) > 0 && (int)dmg >= PERS_HP(pers)) {
-			int deathSaves = (int)PERS_SKILL(pers, FS_SK_DEATH_SAVES);
-			if (deathSaves > 0) {
+			if (PERS_INTSKILL(pers, FS_SK_DEATH_SAVES) - pers->deathSavesUsed > 0) {
 				dmg = PERS_HP(pers) - 1;
-				PERS_INTSKILL(pers, FS_SK_DEATH_SAVES) = deathSaves - 1;
-				PERS_EXTSKILL(pers, FS_SK_DEATH_SAVES) = deathSaves - 1;
-				pers->deathSavedThisHit = 1;
+				absorb += (int)(dmgPreCap - dmg);
+				pers->deathSavesUsed++;
 			}
 		}
 		// ESCALATION: сбросить счётчик при получении урона
@@ -1875,7 +1869,7 @@ int fs_persConsumeManna(fs_pers_t *pers, int manna, bool silent) {
 	if (!silent) {
 		fs_persSetEvent(pers,FS_PE_MANNACONSUM,"ii",pers->id,manna);
 		if (PERS_OPP_ID(pers)) fs_persSetEvent(pers->opponent,FS_PE_MANNACONSUM,"ii",pers->id,manna);
-	}	
+	}
 	return manna;
 }
 
@@ -1915,7 +1909,7 @@ errno_t fs_persUseEffect(fs_pers_t *pers, fs_persEff_t *eff, fs_pers_t *target, 
 		WARN("Attempt to use an effect marked as FS_PEF_ACTIVE");
 		return ERR_WRONG_STATE;
 	}
-	
+
 	stime = fs_stime;
 	if (!usageStatus) {
 		auxCall = true;
@@ -1928,7 +1922,7 @@ errno_t fs_persUseEffect(fs_pers_t *pers, fs_persEff_t *eff, fs_pers_t *target, 
 	}
 
 	// ==================== CHECKING ====================
-	
+
 	// checking cooldown
 	if (eff->cdrtime > stime) return ERR_GENERAL;
 
@@ -1962,12 +1956,12 @@ errno_t fs_persUseEffect(fs_pers_t *pers, fs_persEff_t *eff, fs_pers_t *target, 
 		}
 	}
 
-	
+
 	if ((eff->flags & FS_PEF_TARGETNOTUSER) && !(target->flags & FS_PF_BOT)){ //Нельзя использовать на игроков
 		*usageStatus = -20;	// -20 - can't apply to anyone from the opponent's team
 		return ERR_GENERAL;
 	}
-	
+
 	// checking manna amount
 	if ((eff->mp > 0) && (PERS_MP(pers) < eff->mp)) {
 		*usageStatus = -40;	// -40 - not enough manna
@@ -1979,19 +1973,19 @@ errno_t fs_persUseEffect(fs_pers_t *pers, fs_persEff_t *eff, fs_pers_t *target, 
 		*usageStatus = -40;	// -40 - not enough manna
 		return ERR_GENERAL;
 	}
-	
+
 	// checking arrowsCnt
 	if (eff->flags & FS_PEF_BOW && pers->arrowsCnt <= 0) {
 		*usageStatus = -46;	// -46 - not enough arrows
 		return ERR_GENERAL;
 	}
-	
+
 	// checking yarost amount
 	if ((eff->e_yarost > 0 && !(eff->flags & FS_PEF_AURA)) && pers->yarost < eff->e_yarost) {
 		*usageStatus = -45;	// -45 - not enough yarost
 		return ERR_GENERAL;
 	}
-	
+
 	status = fs___persEffectTargetCheck(pers,eff,target,usageStatus);
 	if (status != OK) return status;
 
@@ -2011,19 +2005,19 @@ errno_t fs_persUseEffect(fs_pers_t *pers, fs_persEff_t *eff, fs_pers_t *target, 
 
 	// taking manna
 	if (eff->mp > 0) fs_persConsumeManna(pers,eff->mp,false);
-	
+
 	//taking yarost
 	if (eff->e_yarost && !(eff->flags & FS_PEF_AURA)) pers->yarost -= eff->e_yarost; //FIX aura yarost--
 
 	if(eff->flags & FS_PEF_BOW) pers->arrowsCnt -= 1;
-	
+
 	if(eff->code == FS_PEC_RESETCOMBO && target) {
 		target->cmbSize = 0; //ISPRAVLENIE
 		fs_persSetEvent(target, FS_PE_RESETCOMBO, 0);
 		//fs_fightSaveLog(pers,FS_FLC_COMMON,1,pers->id,target->id,NULL,false);
 	}
 	//if(eff->flags & FS_PEF_CLCOMBO) { v_freeData(target->cmbVec); }
-	
+
 	DEBUG("EFFECT [%d --> %d], AOE: %d",pers->id,target->id,eff->aoeCnt);
 	fs_fightSaveLog(pers,FS_FLC_EFFECTUSE,eff->id,0,0,eff->title,true);
 
@@ -2278,7 +2272,7 @@ errno_t fs_persUseEffect(fs_pers_t *pers, fs_persEff_t *eff, fs_pers_t *target, 
 		fs_persSetEvent(pers, FS_PE_ENERGYCONSUM,"ii",pers->id,eff->e_yarost);
 		fs_persSetEvent(pers, FS_PE_ARROWCONSUM,"ii",pers->id,1); // one bow
 	}
-	
+
 	free(effUsageStatuses);
 	v_zero(&v1);
 
@@ -2287,7 +2281,7 @@ errno_t fs_persUseEffect(fs_pers_t *pers, fs_persEff_t *eff, fs_pers_t *target, 
 		fs_persGetTurn(pers->opponent);
 	}
 	if (!(eff->flags & FS_PEF_SPELL)) eff->cnt--;
-	
+
 	if(eff->flags & FS_PEF_SPELL && pers->flags & FS_PF_MAGIC && eff->flags & FS_PEF_PASSTURN) {
 		fs_persAddYarost(pers, 3); //add Yarost
 		fs_persDischarge(pers,-1); //discharge ANYTHINK!
@@ -2299,7 +2293,7 @@ errno_t fs_persUseEffect(fs_pers_t *pers, fs_persEff_t *eff, fs_pers_t *target, 
 			if(pers->opponent->stunSafeCnt > 0) pers->opponent->stunSafeCnt--;
 		}
 	}
-	
+
 	//Убираем вариативки
 	if(!(eff->flags & FS_PEF_SPELL || eff->flags & FS_PEF_ACTIVE || eff->flags & FS_PEF_AUX)) {
 	v_reset(pers->effVec,0);
@@ -2310,7 +2304,7 @@ errno_t fs_persUseEffect(fs_pers_t *pers, fs_persEff_t *eff, fs_pers_t *target, 
 		}
 	}
 	}
-	
+
 	//убираем другие ауры
 	if((eff->flags & FS_PEF_AURA)){
 		v_reset(pers->effVec,0);
@@ -2320,16 +2314,16 @@ errno_t fs_persUseEffect(fs_pers_t *pers, fs_persEff_t *eff, fs_pers_t *target, 
 			}
 		}
 	}
-	
-	
+
+
 	pers->lastEffectUpdateIndex++;
-	
+
 	return OK;
 }
 
 errno_t fs___persEffectTargetCheck(fs_pers_t *pers, fs_persEff_t *eff, fs_pers_t *target, int *usageStatus) {
 	fs_persEff_t *effCopy;
-	
+
 	*usageStatus = 0;
 	if ((eff->flags & FS_PEF_TARGETNOTUSER) && !(target->flags & FS_PF_BOT)) return ERR_GENERAL;
 	if ((eff->flags & FS_PEF_TARGETNOTBOT) && (target->flags & FS_PF_BOT)) return ERR_GENERAL;
@@ -2373,7 +2367,7 @@ void fs___persEffectTargetUpdate(fs_pers_t *pers, fs_persEff_t *eff, fs_pers_t *
 
 void fs___persActivateEffect(fs_pers_t *pers, fs_persEff_t *eff, fs_pers_t *target) {
 	fs_persEff_t *effCopy;
-	
+
 	effCopy = fs_persEffCopy(eff);
 	if (!effCopy) return;
 
@@ -2592,7 +2586,7 @@ errno_t fs_persRecalcEffects(fs_pers_t *pers) {
 							fs_persConsumeManna(pers,-val,!eff->id);
 						} else {
 							PERS_INTSKILL(pers,skill) += val;
-						}	
+						}
 					} else if (fTime && !fPeriod && !fEnd) {
 						if (val != 0 && (eff->flags & FS_PEF_WEAPONEFFECT))
 
@@ -2611,7 +2605,7 @@ errno_t fs_persRecalcEffects(fs_pers_t *pers) {
 					val = PERS_HPMAX(pers) * (eff->f1 + percent_hpmod); //ADD HP IN HPMOD
 					if (eff->i3 > 0 && eff->activator) { //Костыль
 						my_hp = PERS_HPMAX(pers);
-						tg_hp = PERS_HPMAX(eff->activator);	
+						tg_hp = PERS_HPMAX(eff->activator);
 						val = (my_hp <= tg_hp ? PERS_HPMAX(pers) * eff->f1 : PERS_HPMAX(eff->activator) * eff->f1);
 					}
 					if (eff->i2 > 0) val = MAX(MIN(val,eff->i2),-eff->i2);	// max value
@@ -2721,26 +2715,26 @@ errno_t fs_persRecalcEffects(fs_pers_t *pers) {
 				fs_persDamage(pers,(-PERS_HPMAX(pers) * eff->f1),0,false,eff->activator);
 				fs_persSetEvent(pers, FS_PE_MYFIGHTRETURN, 0);
 				fs_persSetEvent(pers, FS_PE_ATTACKWAIT, 0);
-				
+
 				pers->new_pers_id = 0;
-				
+
 				//pers ressurecter
 				if (!((pers->flags & FS_PF_LIFELESS) || (PERS_HP(pers) <= 0))){
 					fs_fightLockMutex(pers->fight);
 					fs_fightDeadCnt(pers->fight, pers->teamNum, -1);
 					fs_fightUnlockMutex(pers->fight);
 				}*/
-				
+
 				pers->status = FS_PS_FIGHTING;
 				pers->new_pers_id = 0; //
 				pers->mtime = 0;
 				fs_persDamage(pers,(-PERS_HPMAX(pers) * eff->f1),0,false,eff->activator);
-				fs_persSetEvent(pers, FS_PE_MYFIGHTRETURN,0); 
+				fs_persSetEvent(pers, FS_PE_MYFIGHTRETURN,0);
  				fs_persSetEvent(pers,FS_PE_ATTACKWAIT,0);
 				//fs_fightLockMutex(pers->fight); //fight ready locked
-				fs_fightDeadCnt(pers->fight,pers->teamNum,-1);	
+				fs_fightDeadCnt(pers->fight,pers->teamNum,-1);
 				//fs_fightUnlockMutex(pers->fight); //fight ready locked
-				
+
 				break;
 			case FS_PEC_BOTHELP:
 				if (!fStart) break;
@@ -2764,7 +2758,7 @@ errno_t fs_persRecalcEffects(fs_pers_t *pers) {
 			if(eff->flags & FS_PEF_AURA){
 				//NOTHINK!
 			}else{
-				
+
 			}
 		} else v_next(pers->effVec,&vi);
 	}
@@ -2983,9 +2977,9 @@ errno_t fs___persActivateEffectCheck(fs_pers_t *pers, fs_persEff_t *eff, fs_pers
 	bool active = false;
 	fs_pers_t *pAnim, *p;
 	vector_t          v1; //MultiAttack Personages
-	
+
 	if(!pers || !eff) return OK;
-	
+
 	//Проверяем активные эффекты, если есть похожий то не активируем богов!
 	bool activate_eff = true;
 	if(!pers || !target) return OK;
@@ -3003,11 +2997,11 @@ errno_t fs___persActivateEffectCheck(fs_pers_t *pers, fs_persEff_t *eff, fs_pers
 	}
 	if(!activate_eff) return OK;
 
-	
+
 	if (fs_persUseEffect(pers,eff,target,NULL) == OK) {
 		if((eff->flags & FS_PEF_SPELL) && eff->cnt > 0) eff->cnt--;
 	}
-	
+
 	/*
 	// setting events
 	p = PERS_OPP_ID(pers) ? pers->opponent : target;
